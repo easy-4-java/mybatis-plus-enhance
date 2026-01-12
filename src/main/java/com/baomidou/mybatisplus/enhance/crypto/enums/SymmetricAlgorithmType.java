@@ -5,7 +5,9 @@ import cn.hutool.crypto.Padding;
 import cn.hutool.crypto.symmetric.SymmetricAlgorithm;
 import cn.hutool.crypto.symmetric.SymmetricCrypto;
 import com.baomidou.mybatisplus.enhance.util.SymmetricCryptoUtil;
+import lombok.Getter;
 
+@Getter
 public enum SymmetricAlgorithmType {
 
     AES(SymmetricAlgorithm.AES.name()),
@@ -20,7 +22,7 @@ public enum SymmetricAlgorithmType {
 
     SM4("SM4");
 
-    private String name;
+    private final String name;
 
     SymmetricAlgorithmType(String name) {
         this.name = name;
@@ -41,12 +43,18 @@ public enum SymmetricAlgorithmType {
      * @param iv 偏移向量，加盐
      * @return SymmetricCrypto
      */
-    public SymmetricCrypto getSymmetricCrypto(Mode mode, Padding padding, String key, String iv) {
-        return SymmetricCryptoUtil.getSymmetricCrypto(this.getName(), mode, padding, key, iv);
+    public SymmetricCrypto getSymmetricCrypto(String mode, String padding, String key, String iv) {
+        return SymmetricCryptoUtil.getSymmetricCrypto(this.getName(), Mode.valueOf(mode), Padding.valueOf(padding), key, iv);
     }
 
-    public String getName() {
-        return name;
+    /**
+     * 获取 SymmetricCrypto
+     * @param key 密钥
+     * @param iv 偏移向量，加盐
+     * @return SymmetricCrypto
+     */
+    public SymmetricCrypto getSymmetricCrypto(Mode mode, Padding padding, String key, String iv) {
+        return SymmetricCryptoUtil.getSymmetricCrypto(this.getName(), mode, padding, key, iv);
     }
 
 }
