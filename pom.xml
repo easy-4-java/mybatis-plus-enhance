@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.hiwepy</groupId>
 	<artifactId>mybatis-plus-enhance</artifactId>
-	<version>3.3.x.20250930-SNAPSHOT</version>
+	<version>3.0.x.20260630-SNAPSHOT</version>
 
 	<description>MyBatis Plus 增强扩展</description>
 	<name>${project.groupId}:${project.artifactId}</name>
