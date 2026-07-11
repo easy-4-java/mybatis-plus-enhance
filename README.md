@@ -2,7 +2,7 @@
 
 ### 项目介绍
 
-> 基于 [MyBatis Plus](https://baomidou.com/introduce/) 的 `数据加解密(Data Encryption And Decryption)`、`数据签名与验签(Data Signature)`、`数据脱敏(Data Masking)`、`数据权限(Data Permission)`、`多租户数据隔离(Multi Tenant Data Isolation)`、`数据国际化(Data Internationalized)` 增强扩展。
+> 基于 [MyBatis Plus](https://baomidou.com/introduce/) 的 `数据加解密(Data Encryption And Decryption)`、`数据签名与验签(Data Signature)`、`数据权限(Data Permission)`、`多租户数据隔离(Multi Tenant Data Isolation)`、`数据国际化(Data Internationalized)` 增强扩展。
 
 Github： https://github.com/hiwepy/mybatis-plus-enhance
 
@@ -11,7 +11,6 @@ Github： https://github.com/hiwepy/mybatis-plus-enhance
 - [x] 提供`3级等保密评`要求的`存储机密性`解决方案
 - [x] 提供`3级等保密评`要求的`存储完整性`解决方案
 - [ ] 提供`网络数据安全管理条例`要求的`数据权限`解决方案
-- [ ] 提供`网络数据安全管理条例`要求的`数据脱敏`解决方案
 - [ ] 提供`多租户SaaS平台`需要的`业务数据的隔离`解决方案
 - [ ] 提供`多语言系统`需要的`数据国际化`解决方案
 
@@ -287,27 +286,11 @@ public abstract class EnhanceServiceImpl<M extends BaseEnhanceMapper<T>, T> exte
 }
 ```
 
-#### 四、基于 MyBatis Plus 插件的 `数据脱敏(Data Masking)` 实现原理
+#### 四、基于 MyBatis Plus 插件的 `数据权限(Data Permission)` 实现原理
 
-> 通过 `MyBatis Plus` 插件实现数据写入或读取时对数据进行`脱敏`，保证数据在数据库中的存储安全性。
+#### 五、基于 MyBatis Plus 插件的 `多租户数据隔离(Multi Tenant Data Isolation)` 实现原理
 
-**数据脱敏的方法**
-
-数据脱敏可以通过多种方法实现，常用的方法包括：
-
-* ‌掩码算法（Masking）‌：例如，将身份证号码的前几位保留，其他位用“X”或“*”代替。
-* ‌伪造姓名（Pseudonymization）‌：将真实姓名替换成随机生成的假名。
-* ‌删除‌：随机删除敏感数据中的部分内容，如电话号码中的某些数字。
-* ‌重排‌：打乱原始数据中某些字符或字段的顺序。
-* ‌加噪‌：在数据中注入随机生成的字符或噪音。
-* ‌加密‌：使用哈希函数如MD5或SHA-256将敏感数据转换为密文。
-
-
-#### 五、基于 MyBatis Plus 插件的 `数据权限(Data Permission)` 实现原理
-
-#### 六、基于 MyBatis Plus 插件的 `多租户数据隔离(Multi Tenant Data Isolation)` 实现原理
-
-#### 七、基于 MyBatis Plus 插件的 `数据国际化(Data Internationalized)` 实现原理
+#### 六、基于 MyBatis Plus 插件的 `数据国际化(Data Internationalized)` 实现原理
 
 
 ### 使用指南
@@ -996,188 +979,34 @@ public class UserController {
 }
 ```
 
-#### 四、基于 MyBatis Plus 插件的 `数据脱敏(Data Masking)` 使用指南
+#### 四、基于 MyBatis Plus 插件的 `数据权限(Data Permission)` 使用指南
 
-2，在vo类上添加功能注解使得插件生效：
+#### 五、基于 MyBatis Plus 插件的 `多租户数据隔离(Multi Tenant Data Isolation)` 使用指南
+
+#### 六、基于 MyBatis Plus 插件的 `数据国际化(Data Internationalized)` 使用指南
+
+#### 七、通用 SQL 增强与观测
+
+`InsertIgnoreInnerInterceptor` 提供显式、线程安全且支持嵌套的 MySQL
+`INSERT IGNORE` 作用域：
+
 ```java
-@SensitiveEncryptEnabled
-@Data
-public class UserDTO {
+MybatisPlusEnhanceInterceptor interceptor = new MybatisPlusEnhanceInterceptor();
+interceptor.addInnerInterceptor(new InsertIgnoreInnerInterceptor());
 
-   private Integer id;
-    /**
-     * 用户名
-     */
-    @EncryptField
-    private String userName;
-    /**
-     * 脱敏的用户名
-     */
-    @SensitiveField(SensitiveType.CHINESE_NAME)
-    private String userNameSensitive;
-    /**
-     * 值的赋值不从数据库取，而是从userName字段获得。
-     */
-    @SensitiveBinded(bindField = "userName",value = SensitiveType.CHINESE_NAME)
-    private String userNameOnlyDTO;
-    /**
-     * 身份证号
-     */
-    @EncryptField
-    private String idcard;
-    /**
-     * 脱敏的身份证号
-     */
-    @SensitiveField(SensitiveType.ID_CARD)
-    private String idcardSensitive;
-    /**
-     * 一个json串，需要脱敏
-     * SensitiveJSONField标记json中需要脱敏的字段
-     */
-    @SensitiveJSONField(sensitivelist = {
-            @SensitiveJSONFieldKey(key = "idcard",type = SensitiveType.ID_CARD),
-            @SensitiveJSONFieldKey(key = "username",type = SensitiveType.CHINESE_NAME),
-    })
-    private String jsonStr;
-
-    private int age;
-
-    @SensitiveField(SensitiveType.EMAIL)
-    private String email;
+try (InsertIgnoreContext.Scope ignored = InsertIgnoreContext.open()) {
+    mapper.insert(entity);
 }
 ```
-## 注解详解
-#### @SensitiveEncryptEnabled
 
-    标记在类上，声明此数据库映射的model对象开启数据加密和脱敏功能。
+`SqlObservationInnerInterceptor` 在 MyBatis `Executor` 层统计真实查询和更新耗时，
+通过 `SqlObservationListener` 将观测结果交给日志、指标或链路追踪系统：
 
-#### @EncryptField
-
-    标记在字段上，必须是字符串，声明此字段在和数据库交互前将数据加密。
-    update,select,insert 都会将指定的字段设置为密文与数据库进行交互。
-    在select的结果集里，此字段会自动解密成明文。因此，业务是无感知的。
-
-#### @SensitiveField(SensitiveType.CHINESE_NAME)
-
-    标记在字段上，必须是字符串。
-    声明此字段在入库或者修改时，会脱敏存储。
-    SensitiveType是脱敏类型，详见脱敏类型章节。
-    
-    一般考虑如下场景。
-    用户的手机号需要在数据库存储为加密的密文，为了查询方便，可能数据库也会有一个脱敏的手机号字段。
-    那就可以这样定义两个字段：
-    
-    //在数据库加密存储的
-    @EncryptField
-    private String phone;
-    //在数据库脱敏存储的
-    @SensitiveField(SensitiveType.MOBILE_PHONE)
-    private String phoneSensitive;
-    
-    而业务代码赋值时，可以赋值两次：
-    
-    ......
-    user.setPhone("18233586969");
-    user.setPhoneSensitive("18233586969");
-    ......
-    此时，数据库两个字段，一个会加密，一个会脱敏。
-    在查询请求的响应结果集里，phone是明文，phoneSensitive是脱敏的。
-#### @SensitiveJSONField
-
-    标记在json字符串上，声明此json串在入库前会将json中指定的字段脱敏。
-    
-    例如：
-    @SensitiveJSONField(sensitivelist = {
-                @SensitiveJSONFieldKey(key = "idcard",type = SensitiveType.ID_CARD),
-                @SensitiveJSONFieldKey(key = "username",type = SensitiveType.CHINESE_NAME),
-        })
-    private String jsonStr;
-    
-    如果jsonStr原文为
-    {
-      "age":18,
-      "idcard":"130722188284646474",
-      "username":"吴彦祖",
-      "city":"北京"
-    }
-    则脱敏后为：
-    {
-      "age":18,
-      "idcard":"130***********6474",
-      "username":"吴**",
-      "city":"北京"
-    
-    }
-    使用场景：
-    有时候数据库会存储一些第三方返回的json串，可能会包含敏感信息。
-    业务里不需要用到敏感信息的明文，此时可以脱敏存储整个json串。
-
-###### @SensitiveBinded(bindField = "userName",value = SensitiveType.CHINESE_NAME)
-
-     此注解适用于如下场景：
-     例如，数据库只存了username字段的加密信息，没有冗余脱敏展示的字段。
-     我的响应类里希望将数据库的加密的某个字段映射到响应的两个属性上（一个解密的属性，一个脱敏的属性）就可以使用该注解。
-     例如，dto里有如下字段：
-     @EncryptField
-     private String username
-     
-     @SensitiveBinded(bindField = "userName",value = SensitiveType.CHINESE_NAME)
-     private String userNameOnlyDTO;
-     
-     则当查询出结果时，userNameOnlyDTO会赋值为username解密后再脱敏的值。
-     相当于数据库的一个字段的值以不同的形式映射到了对象的两个字段上。
-###### 脱敏类型
 ```java
-    public enum SensitiveType {
-        /**
-         * 不脱敏
-         */
-        NONE,
-        /**
-         * 默认脱敏方式
-         */
-        DEFAUL,
-        /**
-         * 中文名
-         */
-        CHINESE_NAME,
-        /**
-         * 身份证号
-         */
-        ID_CARD,
-        /**
-         * 座机号
-         */
-        FIXED_PHONE,
-        /**
-         * 手机号
-         */
-        MOBILE_PHONE,
-        /**
-         * 地址
-         */
-        ADDRESS,
-        /**
-         * 电子邮件
-         */
-        EMAIL,
-        /**
-         * 银行卡
-         */
-        BANK_CARD,
-        /**
-         * 公司开户银行联号
-         */
-        CNAPS_CODE,
-        /**
-         * 支付签约协议号
-         */
-        PAY_SIGN_NO
-    }
+SqlObservationInnerInterceptor observation = new SqlObservationInnerInterceptor();
+observation.addListener(new SlowSqlLoggingListener(500L));
+interceptor.addInnerInterceptor(observation);
 ```
 
-#### 五、基于 MyBatis Plus 插件的 `数据权限(Data Permission)` 使用指南
-
-#### 六、基于 MyBatis Plus 插件的 `多租户数据隔离(Multi Tenant Data Isolation)` 使用指南
-
-#### 七、基于 MyBatis Plus 插件的 `数据国际化(Data Internationalized)` 使用指南
+`EnhanceInnerInterceptor.afterQuery(...)` 是通用查询后扩展点。业务框架应在自己的
+适配模块实现该接口，不应把领域模型、租户上下文或业务 Page 类型引入本项目。

@@ -270,11 +270,9 @@
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>${maven-surefire-plugin.version}</version>
 					<configuration>
-						<!-- 跳过单元测试 -->
-						<skip>true</skip>
-						<skipTests>true</skipTests>
-						<argLine>-Xmx1024m -XX:PermSize=256m -XX:MaxPermSize=256m
-							-Dfile.encoding=UTF-8</argLine>
+							<skip>false</skip>
+							<skipTests>false</skipTests>
+							<argLine>-Xmx1024m -Dfile.encoding=UTF-8</argLine>
 						<additionalClasspathElements>
 							<additionalClasspathElement>${basedir}/target/test-classes</additionalClasspathElement>
 						</additionalClasspathElements>
@@ -550,6 +548,7 @@
         <reflections.version>0.10.2</reflections.version>
         <slf4j.version>2.0.18</slf4j.version>
         <spring-framework.version>6.2.11</spring-framework.version>
+        <transmittable-thread-local.version>2.14.5</transmittable-thread-local.version>
         <lombok.version>1.18.46</lombok.version>
         <mybatis.version>3.5.19</mybatis.version>
         <mybatis-spring.version>3.0.5</mybatis-spring.version>
@@ -626,6 +625,12 @@
 				<artifactId>slf4j-simple</artifactId>
 				<version>${slf4j.version}</version>
 				<scope>test</scope>
+			</dependency>
+			<!-- https://mvnrepository.com/artifact/com.alibaba/transmittable-thread-local -->
+			<dependency>
+				<groupId>com.alibaba</groupId>
+				<artifactId>transmittable-thread-local</artifactId>
+				<version>${transmittable-thread-local.version}</version>
 			</dependency>
 			<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on -->
 			<dependency>
@@ -716,6 +721,11 @@
 		</dependency>
 
 		<!-- Compile dependencies -->
+		<!-- TransmittableThreadLocal（线程上下文透传） -->
+		<dependency>
+			<groupId>com.alibaba</groupId>
+			<artifactId>transmittable-thread-local</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

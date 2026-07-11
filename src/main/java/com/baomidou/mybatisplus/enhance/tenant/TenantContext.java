@@ -15,20 +15,65 @@
  */
 package com.baomidou.mybatisplus.enhance.tenant;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import com.alibaba.ttl.TransmittableThreadLocal;
+
+import java.util.Objects;
 
 public class TenantContext {
 
-	private static final String KEY_CURRENT_TENANT_ID = "KEY_CURRENT_PROVIDER_ID";
-	private static final Map<String, Object> M_CONTEXT = new ConcurrentHashMap<>();
+	private static final TransmittableThreadLocal<Object> CURRENT_TENANT_ID = new TransmittableThreadLocal<>();
 
-	public void setCurrentTenantId(Long tenantId) {
-		M_CONTEXT.put(KEY_CURRENT_TENANT_ID, tenantId);
+	public void setCurrentTenantId(Object tenantId) {
+		if (Objects.isNull(tenantId)) {
+			clear();
+			return;
+		}
+		CURRENT_TENANT_ID.set(tenantId);
 	}
 
-	public Long getCurrentTenantId() {
-		return (Long) M_CONTEXT.get(KEY_CURRENT_TENANT_ID);
+	public Object getCurrentTenantId() {
+		return CURRENT_TENANT_ID.get();
+	}
+
+	public void clear() {
+		CURRENT_TENANT_ID.remove();
+	}
+
+	/**
+	 * 在当前线程中切换租户，并在作用域关闭时恢复先前租户。
+	 *
+	 * @param tenantId 当前作用域的租户 ID
+	 * @return 可自动恢复上下文的租户作用域
+	 */
+	public Scope open(Object tenantId) {
+		Object previousTenantId = getCurrentTenantId();
+		setCurrentTenantId(tenantId);
+		return new Scope(this, previousTenantId);
+	}
+
+	public static final class Scope implements AutoCloseable {
+
+		private final TenantContext context;
+		private final Object previousTenantId;
+		private boolean closed;
+
+		private Scope(TenantContext context, Object previousTenantId) {
+			this.context = context;
+			this.previousTenantId = previousTenantId;
+		}
+
+		@Override
+		public void close() {
+			if (closed) {
+				return;
+			}
+			if (Objects.isNull(previousTenantId)) {
+				context.clear();
+			} else {
+				context.setCurrentTenantId(previousTenantId);
+			}
+			closed = true;
+		}
 	}
 
 }

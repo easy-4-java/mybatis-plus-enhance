@@ -12,8 +12,6 @@ import com.baomidou.mybatisplus.enhance.crypto.annotation.EncryptedField;
 import com.baomidou.mybatisplus.enhance.crypto.annotation.EncryptedTable;
 import com.baomidou.mybatisplus.enhance.crypto.annotation.TableSignature;
 import com.baomidou.mybatisplus.enhance.crypto.annotation.TableSignatureField;
-import com.baomidou.mybatisplus.enhance.sensitive.annotation.SensitiveField;
-import com.baomidou.mybatisplus.enhance.sensitive.annotation.SensitiveJSONField;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -53,63 +51,6 @@ public class TableFieldHelper {
      */
     public static boolean isExistTableCryptoField(List<Field> list, AnnotationHandler annotationHandler) {
         return list.stream().anyMatch(field -> annotationHandler.isAnnotationPresent(field, EncryptedField.class));
-    }
-
-    /**
-     * <p>
-     * 获取该类的标记有 @SensitiveJSONField 注解的的字段信息列表
-     * </p>
-     *
-     * @param entityClazz 反射类
-     * @return 属性集合
-     */
-    public static List<TableFieldInfo> getSensitiveJSONFieldInfos(Class<?> entityClazz) {
-        TableInfo tableInfo = TableInfoHelper.getTableInfo(entityClazz);
-        return getSensitiveFieldInfos(tableInfo);
-    }
-
-    /**
-     * <p>
-     * 获取该类的标记有 @SensitiveJSONField 注解的的字段信息列表
-     * </p>
-     *
-     * @param tableInfo 反射类
-     * @return 属性集合
-     */
-    public static List<TableFieldInfo> getSensitiveJSONFieldInfos(TableInfo tableInfo) {
-        return tableInfo.getFieldList().stream().filter(fieldInfo -> {
-            SensitiveJSONField encryptedField = AnnotationUtils.findFirstAnnotation(SensitiveJSONField.class, fieldInfo.getField());
-            return Objects.nonNull(encryptedField);
-        }).collect(Collectors.toList());
-    }
-
-    /**
-     * <p>
-     * 获取该类的标记有 @SensitiveField 注解的的字段信息列表
-     * </p>
-     *
-     * @param entityClazz 反射类
-     * @return 属性集合
-     */
-    public static List<TableFieldInfo> getSensitiveFieldInfos(Class<?> entityClazz) {
-        TableInfo tableInfo = TableInfoHelper.getTableInfo(entityClazz);
-        return getSensitiveFieldInfos(tableInfo);
-    }
-
-    /**
-     * <p>
-     * 获取该类的标记有 @SensitiveField 注解的的字段信息列表
-     * </p>
-     *
-     * @param tableInfo 反射类
-     * @return 属性集合
-     */
-    public static List<TableFieldInfo> getSensitiveFieldInfos(TableInfo tableInfo) {
-        return tableInfo.getFieldList().stream().filter(fieldInfo -> {
-            /* 过滤注解非加密表字段属性 */
-            SensitiveField encryptedField = AnnotationUtils.findFirstAnnotation(SensitiveField.class, fieldInfo.getField());
-            return Objects.nonNull(encryptedField);
-        }).collect(Collectors.toList());
     }
 
     /**
