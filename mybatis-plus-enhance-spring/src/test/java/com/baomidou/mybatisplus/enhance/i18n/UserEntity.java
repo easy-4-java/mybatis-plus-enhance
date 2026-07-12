@@ -3,9 +3,9 @@ package com.baomidou.mybatisplus.enhance.i18n;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
 import org.apache.mybatis.enhance.annotation.crypto.TableSignature;
 import org.apache.mybatis.enhance.annotation.crypto.TableSignatureField;
-import lombok.Data;
 
 import java.io.Serializable;
 

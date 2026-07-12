@@ -32,7 +32,7 @@ public class ResourceBundleEnumeration implements Enumeration<String> {
     }
 
     /**
-     * @param parent 可选父资源包
+     * @param parent  可选父资源包
      * @param bundles 待合并的子资源包
      */
     public ResourceBundleEnumeration(ResourceBundle parent, ResourceBundle... bundles) {

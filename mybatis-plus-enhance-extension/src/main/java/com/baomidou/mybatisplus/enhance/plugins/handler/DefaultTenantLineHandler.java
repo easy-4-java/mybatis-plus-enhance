@@ -31,7 +31,9 @@ import java.util.function.Predicate;
  */
 public class DefaultTenantLineHandler implements TenantLineHandler {
 
-    /** 默认租户字段名。 */
+    /**
+     * 默认租户字段名。
+     */
     public static final String DEFAULT_TENANT_COLUMN = "tenant_id";
 
     private static final Predicate<String> NEVER_IGNORE = tableName -> false;

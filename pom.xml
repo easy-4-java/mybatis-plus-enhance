@@ -533,7 +533,9 @@
                                         <exclude>org.mybatis:mybatis-spring</exclude>
                                         <exclude>com.baomidou:mybatis-plus-spring</exclude>
                                     </excludes>
-                                    <message>非 Spring 模块禁止引入 Spring；请将集成代码放入 mybatis-plus-enhance-spring。</message>
+                                    <message>非 Spring 模块禁止引入 Spring；请将集成代码放入
+                                        mybatis-plus-enhance-spring。
+                                    </message>
                                 </bannedDependencies>
                             </rules>
                         </configuration>

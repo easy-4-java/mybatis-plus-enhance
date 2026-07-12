@@ -10,12 +10,12 @@ import com.baomidou.mybatisplus.core.toolkit.AnnotationUtils;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.baomidou.mybatisplus.core.toolkit.ExceptionUtils;
-import org.apache.mybatis.enhance.annotation.crypto.TableSignature;
-import org.apache.mybatis.enhance.annotation.crypto.TableSignatureField;
 import com.baomidou.mybatisplus.enhance.util.TableFieldHelper;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.mybatis.enhance.annotation.crypto.TableSignature;
+import org.apache.mybatis.enhance.annotation.crypto.TableSignatureField;
 
 import java.util.*;
 import java.util.regex.Matcher;

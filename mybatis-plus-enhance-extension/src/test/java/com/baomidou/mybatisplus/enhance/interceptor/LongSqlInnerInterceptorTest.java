@@ -1,4 +1,5 @@
 package com.baomidou.mybatisplus.enhance.plugins.inner;
+
 import org.apache.ibatis.builder.StaticSqlSource;
 import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.mapping.MappedStatement;

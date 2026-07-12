@@ -3,11 +3,11 @@
 `mybatis-plus-enhance` 以主版本线区分 Java 基线。三条版本线分别维护源码、依赖和构建配置，
 不通过 Maven Profile 在同一份源码中动态切换 Java 版本。
 
-| 项目版本线 | Java 基线 | Maven 编译基线 | Spring 技术栈 | API 命名空间 | MyBatis-Plus JSqlParser |
-|---|---:|---|---|---|---|
-| `1.0.x` | JDK 8 | `source/target = 1.8` | Spring Framework 5.3.x | `javax.*` | `mybatis-plus-jsqlparser-4.9` |
-| `2.0.x` | JDK 17 | `release = 17` | Spring Framework 6.2.x | `jakarta.*` | `mybatis-plus-jsqlparser` |
-| `3.0.x` | JDK 21 | `release = 21` | 选择明确支持 JDK 21 的稳定版本 | `jakarta.*` | `mybatis-plus-jsqlparser` |
+| 项目版本线   | Java 基线 | Maven 编译基线            | Spring 技术栈             | API 命名空间    | MyBatis-Plus JSqlParser       |
+|---------|--------:|-----------------------|------------------------|-------------|-------------------------------|
+| `1.0.x` |   JDK 8 | `source/target = 1.8` | Spring Framework 5.3.x | `javax.*`   | `mybatis-plus-jsqlparser-4.9` |
+| `2.0.x` |  JDK 17 | `release = 17`        | Spring Framework 6.2.x | `jakarta.*` | `mybatis-plus-jsqlparser`     |
+| `3.0.x` |  JDK 21 | `release = 21`        | 选择明确支持 JDK 21 的稳定版本    | `jakarta.*` | `mybatis-plus-jsqlparser`     |
 
 ## 版本线约束
 
@@ -24,14 +24,14 @@
 
 当前分支属于 `2.0.x`，关键依赖固定为：
 
-| 组件 | 版本或系列 | 选择原因 |
-|---|---|---|
-| Java | 17 | `2.0.x` 的最低编译与运行环境 |
-| Spring Framework | 6.2.11 | 与 JDK 17 和 Jakarta API 技术栈配套 |
-| MyBatis | 3.5.19 | 当前增强实现的稳定基础版本 |
-| MyBatis-Plus | 3.5.14 | 当前增强实现的验证基线 |
-| JSqlParser | 5.2 | 与 MyBatis-Plus 标准 JSqlParser 适配包配套 |
-| Annotation API | `jakarta.annotation-api` 2.1.1 | 与 Spring 6 的 Jakarta 技术栈一致 |
+| 组件               | 版本或系列                          | 选择原因                               |
+|------------------|--------------------------------|------------------------------------|
+| Java             | 17                             | `2.0.x` 的最低编译与运行环境                 |
+| Spring Framework | 6.2.11                         | 与 JDK 17 和 Jakarta API 技术栈配套       |
+| MyBatis          | 3.5.19                         | 当前增强实现的稳定基础版本                      |
+| MyBatis-Plus     | 3.5.14                         | 当前增强实现的验证基线                        |
+| JSqlParser       | 5.2                            | 与 MyBatis-Plus 标准 JSqlParser 适配包配套 |
+| Annotation API   | `jakarta.annotation-api` 2.1.1 | 与 Spring 6 的 Jakarta 技术栈一致         |
 
 `2.0.x` 不得降级到 Spring 5、`javax.annotation` 或 JSqlParser 4.9，也不得使用
 JDK 17 不支持的 Java 21 专属语法和标准库 API。

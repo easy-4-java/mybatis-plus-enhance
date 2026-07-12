@@ -25,7 +25,9 @@ import java.util.*;
  */
 public class I18nListResourceBundle extends ListResourceBundle {
 
-    /** 国际化键值集合。 */
+    /**
+     * 国际化键值集合。
+     */
     private final List<KeyValuePair> i18nList;
 
     /**

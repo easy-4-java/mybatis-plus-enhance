@@ -29,7 +29,9 @@ public class MultipleResourceBundle extends ResourceBundle {
 
     private final ResourceBundle[] bundles;
 
-    /** 创建待由子类或反射配置的空复合资源包。 */
+    /**
+     * 创建待由子类或反射配置的空复合资源包。
+     */
     public MultipleResourceBundle() {
         this.bundles = new ResourceBundle[0];
     }

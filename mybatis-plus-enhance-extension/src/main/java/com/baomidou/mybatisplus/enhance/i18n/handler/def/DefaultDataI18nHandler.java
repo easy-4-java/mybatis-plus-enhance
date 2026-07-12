@@ -1,13 +1,13 @@
 package com.baomidou.mybatisplus.enhance.i18n.handler.def;
 
-import org.apache.mybatis.enhance.annotation.i18n.I18nColumn;
-import org.apache.mybatis.enhance.annotation.i18n.I18nLocale;
-import org.apache.mybatis.enhance.annotation.i18n.I18nMapper;
-import org.apache.mybatis.enhance.annotation.i18n.I18nSwitch;
 import com.baomidou.mybatisplus.enhance.i18n.handler.DataI18nHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.mapping.MappedStatement;
+import org.apache.mybatis.enhance.annotation.i18n.I18nColumn;
+import org.apache.mybatis.enhance.annotation.i18n.I18nLocale;
+import org.apache.mybatis.enhance.annotation.i18n.I18nMapper;
+import org.apache.mybatis.enhance.annotation.i18n.I18nSwitch;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
