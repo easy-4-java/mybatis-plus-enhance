@@ -1,6 +1,6 @@
 package com.baomidou.mybatisplus.enhance.datascope.handler;
 
-import com.baomidou.mybatisplus.enhance.datascope.annotation.DataScopePlus;
+import com.baomidou.mybatisplus.enhance.annotation.datascope.DataScopePlus;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.schema.Table;
 

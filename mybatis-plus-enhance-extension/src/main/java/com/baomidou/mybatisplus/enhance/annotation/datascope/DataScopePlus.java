@@ -1,4 +1,4 @@
-package com.baomidou.mybatisplus.enhance.datascope.annotation;
+package com.baomidou.mybatisplus.enhance.annotation.datascope;
 
 
 import java.lang.annotation.ElementType;

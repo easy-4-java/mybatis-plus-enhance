@@ -1,9 +1,9 @@
 package com.baomidou.mybatisplus.enhance.i18n.handler;
 
-import com.baomidou.mybatisplus.enhance.i18n.annotation.I18nColumn;
-import com.baomidou.mybatisplus.enhance.i18n.annotation.I18nLocale;
-import com.baomidou.mybatisplus.enhance.i18n.annotation.I18nMapper;
-import com.baomidou.mybatisplus.enhance.i18n.annotation.LocaleEnum;
+import org.apache.mybatis.enhance.annotation.i18n.I18nColumn;
+import org.apache.mybatis.enhance.annotation.i18n.I18nLocale;
+import org.apache.mybatis.enhance.annotation.i18n.I18nMapper;
+import org.apache.mybatis.enhance.annotation.i18n.LocaleEnum;
 import com.baomidou.mybatisplus.enhance.i18n.handler.def.DefaultDataI18nHandler;
 import org.apache.ibatis.builder.StaticSqlSource;
 import org.apache.ibatis.mapping.MappedStatement;
