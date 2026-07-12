@@ -124,8 +124,8 @@
         <junit.version>4.13.2</junit.version>
         <lombok.version>1.18.46</lombok.version>
         <mybatis.version>3.5.19</mybatis.version>
-        <!-- 公共注解协议使用 JDK 8 基线，可安全被 JDK 17 的 2.0.x 版本线复用。 -->
-        <mybatis-enhance.version>1.0.x.20260630-SNAPSHOT</mybatis-enhance.version>
+        <!-- 公共注解协议与 mybatis-enhance 版本线一一对应。 -->
+        <mybatis-enhance.version>2.0.x.20260630-SNAPSHOT</mybatis-enhance.version>
         <mybatis-plus.version>3.5.14</mybatis-plus.version>
         <slf4j.version>2.0.18</slf4j.version>
         <!-- Spring Framework 6.2 与 JDK 17、Jakarta EE 技术栈配套。 -->
