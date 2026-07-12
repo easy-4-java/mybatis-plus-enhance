@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.hiwepy</groupId>
+        <artifactId>mybatis-plus-enhance</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>mybatis-plus-enhance-core</artifactId>
+    <name>MyBatis-Plus Enhance :: Core</name>
+    <description>增强拦截器链、执行后生命周期与公共基础类。</description>
+    <dependencies>
+        <!--
+            MyBatis Core：提供 Executor、MappedStatement、BoundSql、StatementHandler 等底层扩展 API，
+            MybatisPlusEnhanceInterceptor 的查询、更新和执行完成生命周期直接依赖这些类型。
+        -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+        </dependency>
+        <!--
+            MyBatis-Plus Annotation：BooleanEnum 实现 IEnum 所需。
+            单独声明该依赖，避免依赖 mybatis-plus-core 的传递关系才能编译。
+        -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-annotation</artifactId>
+        </dependency>
+        <!-- MyBatis-Plus Core：ParameterUtils 使用其数组、集合等基础工具。 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-core</artifactId>
+        </dependency>
+        <!--
+            MyBatis-Plus Extension：提供 MybatisPlusInterceptor 和 InnerInterceptor 契约。
+            这是 Core 公共 API 的组成部分，因此必须保持 compile 作用域。
+        -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-extension</artifactId>
+        </dependency>
+        <!-- SLF4J API：统一增强链内部日志门面，不绑定 Logback、Log4j 等具体实现。 -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <!-- Lombok：生成 @Slf4j、Getter 等编译期代码；provided 防止向使用方传播。 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</project>
