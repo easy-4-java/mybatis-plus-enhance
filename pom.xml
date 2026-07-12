@@ -126,6 +126,8 @@
         <junit.version>4.13.2</junit.version>
         <lombok.version>1.18.46</lombok.version>
         <mybatis.version>3.5.19</mybatis.version>
+        <!-- 公共注解协议使用 JDK 8 基线，与 1.0.x 版本线保持同级兼容。 -->
+        <mybatis-enhance.version>1.0.x.20260630-SNAPSHOT</mybatis-enhance.version>
         <mybatis-plus.version>3.5.14</mybatis-plus.version>
         <slf4j.version>2.0.18</slf4j.version>
         <!-- Spring Framework 5.3 是支持 JDK 8 的最后一个主版本系列。 -->
@@ -139,6 +141,13 @@
     -->
     <dependencyManagement>
         <dependencies>
+
+            <!-- 原生 MyBatis 与 MyBatis-Plus 共用的轻量注解协议。 -->
+            <dependency>
+                <groupId>io.github.hiwepy</groupId>
+                <artifactId>mybatis-enhance-annotation</artifactId>
+                <version>${mybatis-enhance.version}</version>
+            </dependency>
 
             <!--
                 Enhance Core：统一增强拦截器链和公共工具。
