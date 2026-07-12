@@ -26,55 +26,33 @@ MyBatis-Plus 官方拦截器组合使用。
 | MyBatis-Plus | 3.5.14 |
 | Hutool       | 5.8.40 |
 
-Spring 集成已隔离到 `mybatis-plus-enhance-spring`。`core`、`crypto`、`datascope`、
-`i18n`、`tenant`、`observation` 和 `sql` 模块不强制引入 Spring。
+Spring 集成已隔离到 `mybatis-plus-enhance-spring`。`core` 与 `extension` 保持 Spring 无关；
+普通 MyBatis-Plus 项目只需按能力选择 `core` 或 `extension`。
 
 ## 引入依赖
 
 ```xml
-<dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>io.github.hiwepy</groupId>
-            <artifactId>mybatis-plus-enhance-bom</artifactId>
-            <version>1.0.x.20260630-SNAPSHOT</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-    </dependencies>
-</dependencyManagement>
-
 <dependencies>
     <dependency>
         <groupId>io.github.hiwepy</groupId>
-        <artifactId>mybatis-plus-enhance-core</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.github.hiwepy</groupId>
-        <artifactId>mybatis-plus-enhance-crypto</artifactId>
+        <artifactId>mybatis-plus-enhance-extension</artifactId>
+        <version>1.0.x.20260630-SNAPSHOT</version>
     </dependency>
 </dependencies>
 ```
 
-需要一次引入全部功能时，可使用 `mybatis-plus-enhance-all`。生产应用更推荐按需引入功能模块，
-避免传递 Jackson、Hutool、BouncyCastle、TTL 或 Spring 等不需要的依赖。
+`extension` 已包含 Core 以及加密、租户、数据权限、国际化、SQL 和观测增强。需要带签名语义的
+Service、事务和依赖注入时，改为引入 `mybatis-plus-enhance-spring`，它会传递引入 Extension。
 
 若使用快照版本，请在应用的 Maven 配置中启用对应快照仓库。生产环境建议锁定经过验证的发布版本，不要使用动态版本范围。
 
 ## 模块结构
 
-| 模块                                 | 职责                                        |
-|------------------------------------|-------------------------------------------|
-| `mybatis-plus-enhance-bom`         | 统一管理全部模块版本                                |
-| `mybatis-plus-enhance-core`        | 增强拦截器链与查询后、更新后、执行完成生命周期                   |
-| `mybatis-plus-enhance-crypto`      | 字段加解密、HMAC、表签名验签、密文 Mapper 与 SQL Injector |
-| `mybatis-plus-enhance-datascope`   | 基于官方 DataPermissionInterceptor 的注解数据权限    |
-| `mybatis-plus-enhance-i18n`        | 同行多语言字段映射、Locale 上下文与查询后拦截器               |
-| `mybatis-plus-enhance-tenant`      | 可透传租户上下文与官方 TenantLineHandler 适配          |
-| `mybatis-plus-enhance-observation` | SQL 执行观测、Sink SPI 与慢 SQL 日志               |
-| `mybatis-plus-enhance-sql`         | MySQL INSERT IGNORE 作用域与超长 SQL 检测         |
-| `mybatis-plus-enhance-spring`      | 带签名语义的 Spring Service 和事务集成               |
-| `mybatis-plus-enhance-all`         | 一站式功能聚合 POM                               |
+| 模块                              | 职责 |
+|---------------------------------|------|
+| `mybatis-plus-enhance-core`      | 增强拦截器契约、查询后/更新后/执行完成生命周期和公共工具 |
+| `mybatis-plus-enhance-extension` | 加密、签名、租户、数据权限、国际化、SQL 处理和执行观测 |
+| `mybatis-plus-enhance-spring`    | 带签名语义的 Spring Service、依赖注入和事务集成 |
 
 ## 配置增强拦截器链
 
@@ -390,9 +368,9 @@ public final class AuditInnerInterceptor implements EnhanceInnerInterceptor {
 mvn clean verify
 ```
 
-项目强制 Maven 3.9.6+。父 POM 会统一校验 Maven、Java 和模块依赖边界：除
-`mybatis-plus-enhance-spring` 与聚合模块 `mybatis-plus-enhance-all` 外，其他模块传递依赖中
-不允许出现 Spring、MyBatis-Spring 或 MyBatis-Plus-Spring。
+项目强制 Maven 3.9.6+。父 POM 会统一校验 Maven、Java 和模块依赖边界：Core 与 Extension
+的传递依赖中不允许出现 Spring、MyBatis-Spring 或 MyBatis-Plus-Spring，只有
+`mybatis-plus-enhance-spring` 明确放行 Spring。
 
 项目使用 Maven CI-Friendly Version 和 `flatten-maven-plugin` 管理多模块版本：
 

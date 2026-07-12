@@ -73,20 +73,13 @@
     </distributionManagement>
 
     <!--
-        Reactor 模块顺序同时表达依赖方向：版本约束最先构建，基础设施先于功能模块，
-        Spring 适配与全量聚合最后构建。新增模块时应同步更新父级 dependencyManagement 与 BOM。
+        Reactor 模块顺序表达单向依赖：Core 提供基础契约，Extension 提供增强实现，
+        Spring 只负责框架适配。三个代码模块避免按功能点过度拆分。
     -->
     <modules>
-        <module>mybatis-plus-enhance-bom</module>
         <module>mybatis-plus-enhance-core</module>
-        <module>mybatis-plus-enhance-crypto</module>
-        <module>mybatis-plus-enhance-datascope</module>
-        <module>mybatis-plus-enhance-i18n</module>
-        <module>mybatis-plus-enhance-tenant</module>
-        <module>mybatis-plus-enhance-observation</module>
-        <module>mybatis-plus-enhance-sql</module>
+        <module>mybatis-plus-enhance-extension</module>
         <module>mybatis-plus-enhance-spring</module>
-        <module>mybatis-plus-enhance-all</module>
     </modules>
 
     <properties>
@@ -102,7 +95,7 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
-        <!-- 默认禁止 Spring 依赖，仅 spring 与 all 模块覆盖为 true。 -->
+        <!-- 默认禁止 Spring 依赖，仅 spring 模块覆盖为 true。 -->
         <allow.spring.dependencies>false</allow.spring.dependencies>
 
         <!-- 构建与发布插件版本集中管理，子模块不得单独漂移。 -->
@@ -154,40 +147,13 @@
                 <artifactId>mybatis-plus-enhance-core</artifactId>
                 <version>${revision}</version>
             </dependency>
-            <!-- Enhance Crypto：字段加解密、HMAC、表签名和密文 Mapper。 -->
+            <!--
+                Enhance Extension：聚合加密、租户、数据权限、国际化、SQL 与观测增强，
+                对齐 MyBatis-Plus 将可插拔实现集中在 extension 的模块模式。
+            -->
             <dependency>
                 <groupId>io.github.hiwepy</groupId>
-                <artifactId>mybatis-plus-enhance-crypto</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <!-- Enhance Datascope：注解式数据权限和 JSqlParser 表达式工具。 -->
-            <dependency>
-                <groupId>io.github.hiwepy</groupId>
-                <artifactId>mybatis-plus-enhance-datascope</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <!-- Enhance I18n：Locale 上下文、查询结果映射和资源包支持。 -->
-            <dependency>
-                <groupId>io.github.hiwepy</groupId>
-                <artifactId>mybatis-plus-enhance-i18n</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <!-- Enhance Tenant：租户上下文与官方 TenantLineHandler 适配。 -->
-            <dependency>
-                <groupId>io.github.hiwepy</groupId>
-                <artifactId>mybatis-plus-enhance-tenant</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <!-- Enhance Observation：SQL 耗时、异常和慢 SQL 观测。 -->
-            <dependency>
-                <groupId>io.github.hiwepy</groupId>
-                <artifactId>mybatis-plus-enhance-observation</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <!-- Enhance SQL：INSERT IGNORE 作用域和超长 SQL 检测。 -->
-            <dependency>
-                <groupId>io.github.hiwepy</groupId>
-                <artifactId>mybatis-plus-enhance-sql</artifactId>
+                <artifactId>mybatis-plus-enhance-extension</artifactId>
                 <version>${revision}</version>
             </dependency>
             <!-- Enhance Spring：事务、依赖注入和增强 Service 适配。 -->
@@ -196,14 +162,6 @@
                 <artifactId>mybatis-plus-enhance-spring</artifactId>
                 <version>${revision}</version>
             </dependency>
-            <!-- Enhance All：一站式聚合 POM，不包含自身实现代码。 -->
-            <dependency>
-                <groupId>io.github.hiwepy</groupId>
-                <artifactId>mybatis-plus-enhance-all</artifactId>
-                <version>${revision}</version>
-                <type>pom</type>
-            </dependency>
-
             <!-- MyBatis 与 MyBatis-Plus 基础设施。 -->
             <!-- MyBatis Core：框架底层执行器、映射语句和插件 API。 -->
             <dependency>

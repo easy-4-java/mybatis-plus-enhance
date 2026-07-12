@@ -16,10 +16,10 @@
     <name>MyBatis-Plus Enhance :: Spring</name>
     <description>基于 Spring 事务和依赖注入的增强 Service 集成。</description>
     <dependencies>
-        <!-- Crypto：IEnhanceService 和 EnhanceServiceImpl 直接复用签名处理器与 EnhanceBaseMapper。 -->
+        <!-- Extension：Service 直接复用签名处理器、加密能力与 EnhanceBaseMapper。 -->
         <dependency>
             <groupId>io.github.hiwepy</groupId>
-            <artifactId>mybatis-plus-enhance-crypto</artifactId>
+            <artifactId>mybatis-plus-enhance-extension</artifactId>
         </dependency>
         <!-- MyBatis Core：Service API 暴露 ResultHandler，并处理 MapperMethod 参数。 -->
         <dependency>
