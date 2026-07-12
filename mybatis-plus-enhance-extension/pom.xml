@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.hiwepy</groupId>
+        <artifactId>mybatis-plus-enhance</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>mybatis-plus-enhance-extension</artifactId>
+    <name>MyBatis-Plus Enhance :: Extension</name>
+    <description>加密、租户、数据权限、国际化、SQL 处理与执行观测等可插拔增强实现。</description>
+
+    <dependencies>
+        <!-- Core：统一拦截器链、执行后生命周期和公共参数工具。 -->
+        <dependency>
+            <groupId>io.github.hiwepy</groupId>
+            <artifactId>mybatis-plus-enhance-core</artifactId>
+        </dependency>
+
+        <!-- MyBatis Core：执行器、映射语句、BoundSql、Mapper 注解和反射元数据。 -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+        </dependency>
+        <!-- MyBatis-Plus Core：Wrapper、TableInfo、BaseMapper 和 SQL Injector。 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-core</artifactId>
+        </dependency>
+        <!-- MyBatis-Plus Extension：InnerInterceptor、处理器契约和 JsqlParserSupport。 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-extension</artifactId>
+        </dependency>
+        <!-- MyBatis-Plus JSqlParser：JDK 21 对应的官方 SQL 解析集成。 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+        </dependency>
+        <!-- JSqlParser：数据权限 Provider 和租户处理器公共 API 直接暴露 AST 类型。 -->
+        <dependency>
+            <groupId>com.github.jsqlparser</groupId>
+            <artifactId>jsqlparser</artifactId>
+        </dependency>
+        <!-- TTL：租户、Locale 和 INSERT IGNORE 作用域的线程上下文透传。 -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>transmittable-thread-local</artifactId>
+        </dependency>
+        <!-- Hutool：AES、SM4、HMAC、Base64、Hex 和反射辅助实现。 -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+        </dependency>
+        <!-- Bouncy Castle：部分 JDK 上的 SM 系列算法 Provider，仅运行时加载。 -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- Commons Lang3：纯 Java 字符串、对象和配置文本处理。 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <!-- Jackson Databind：加密字段的 JSON 序列化和解密类型恢复。 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <!-- SLF4J API：统一日志门面，不绑定具体日志实现。 -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <!-- Lombok：生成访问器、不可变值对象和 @Slf4j 字段，仅参与编译。 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</project>
