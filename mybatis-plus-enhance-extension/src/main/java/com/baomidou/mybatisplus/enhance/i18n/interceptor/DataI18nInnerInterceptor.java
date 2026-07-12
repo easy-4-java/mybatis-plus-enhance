@@ -3,7 +3,7 @@ package com.baomidou.mybatisplus.enhance.i18n.interceptor;
 import com.baomidou.mybatisplus.enhance.i18n.context.I18nContext;
 import com.baomidou.mybatisplus.enhance.i18n.handler.DataI18nHandler;
 import com.baomidou.mybatisplus.enhance.i18n.provider.LocaleProvider;
-import com.baomidou.mybatisplus.enhance.plugins.EnhanceInnerInterceptor;
+import com.baomidou.mybatisplus.enhance.plugins.inner.EnhanceInnerInterceptor;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;

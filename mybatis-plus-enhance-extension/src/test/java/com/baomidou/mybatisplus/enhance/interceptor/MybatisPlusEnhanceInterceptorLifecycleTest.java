@@ -1,6 +1,7 @@
 package com.baomidou.mybatisplus.enhance.plugins;
 
 import com.baomidou.mybatisplus.enhance.observation.SqlObservation;
+import com.baomidou.mybatisplus.enhance.plugins.inner.EnhanceInnerInterceptor;
 import com.baomidou.mybatisplus.enhance.plugins.inner.SqlObservationInnerInterceptor;
 import org.apache.ibatis.builder.StaticSqlSource;
 import org.apache.ibatis.cache.CacheKey;

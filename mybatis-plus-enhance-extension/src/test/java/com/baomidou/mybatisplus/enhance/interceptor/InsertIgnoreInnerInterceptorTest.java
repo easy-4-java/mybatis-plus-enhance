@@ -1,6 +1,4 @@
-package com.baomidou.mybatisplus.enhance.plugins;
-
-import com.baomidou.mybatisplus.enhance.plugins.inner.InsertIgnoreInnerInterceptor;
+package com.baomidou.mybatisplus.enhance.plugins.inner;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
