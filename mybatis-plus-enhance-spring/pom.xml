@@ -75,16 +75,10 @@
             <artifactId>spring-web</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Jakarta Annotation：测试示例使用资源注入和生命周期注解。 -->
+        <!-- Javax Annotation：JDK 8 / Spring 5.3 测试示例使用资源注入注解。 -->
         <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- Jakarta Servlet：测试 Web 示例编译所需，不进入主构件。 -->
-        <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

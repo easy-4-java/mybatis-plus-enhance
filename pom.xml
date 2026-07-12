@@ -119,15 +119,17 @@
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <hutool.version>5.8.40</hutool.version>
         <jackson.version>2.18.9</jackson.version>
-        <jakarta-annotation.version>2.1.1</jakarta-annotation.version>
-        <jakarta-servlet.version>6.1.0</jakarta-servlet.version>
-        <jsqlparser.version>5.2</jsqlparser.version>
+        <!-- 1.0.x 面向 JDK 8，使用 Java EE 8 的 javax 注解命名空间。 -->
+        <javax-annotation.version>1.3.2</javax-annotation.version>
+        <!-- MyBatis-Plus 官方为 JDK 8 单独提供基于 JSqlParser 4.9 的适配包。 -->
+        <jsqlparser.version>4.9</jsqlparser.version>
         <junit.version>4.13.2</junit.version>
         <lombok.version>1.18.46</lombok.version>
         <mybatis.version>3.5.19</mybatis.version>
         <mybatis-plus.version>3.5.14</mybatis-plus.version>
         <slf4j.version>2.0.18</slf4j.version>
-        <spring-framework.version>6.2.11</spring-framework.version>
+        <!-- Spring Framework 5.3 是支持 JDK 8 的最后一个主版本系列。 -->
+        <spring-framework.version>5.3.39</spring-framework.version>
         <transmittable-thread-local.version>2.14.5</transmittable-thread-local.version>
     </properties>
 
@@ -193,10 +195,10 @@
                 <artifactId>mybatis-plus-spring</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
-            <!-- MyBatis-Plus JSqlParser：租户、数据权限和 SQL AST 扩展支持。 -->
+            <!-- MyBatis-Plus JSqlParser 4.9：JDK 8 专用的 SQL AST 集成。 -->
             <dependency>
                 <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-jsqlparser</artifactId>
+                <artifactId>mybatis-plus-jsqlparser-4.9</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
             <!-- JSqlParser：功能模块公共 API 直接使用的 SQL 抽象语法树类型。 -->
@@ -283,17 +285,11 @@
                 <artifactId>spring-web</artifactId>
                 <version>${spring-framework.version}</version>
             </dependency>
-            <!-- Jakarta Annotation：测试示例的标准注入和生命周期注解。 -->
+            <!-- Javax Annotation：JDK 8 / Spring 5.3 测试示例的标准资源注入注解。 -->
             <dependency>
-                <groupId>jakarta.annotation</groupId>
-                <artifactId>jakarta.annotation-api</artifactId>
-                <version>${jakarta-annotation.version}</version>
-            </dependency>
-            <!-- Jakarta Servlet：测试 Web 示例的 Servlet API。 -->
-            <dependency>
-                <groupId>jakarta.servlet</groupId>
-                <artifactId>jakarta.servlet-api</artifactId>
-                <version>${jakarta-servlet.version}</version>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>${javax-annotation.version}</version>
             </dependency>
 
             <!-- 统一测试框架版本。 -->
@@ -532,6 +528,32 @@
                                         <exclude>com.baomidou:mybatis-plus-spring</exclude>
                                     </excludes>
                                     <message>非 Spring 模块禁止引入 Spring；请将集成代码放入 mybatis-plus-enhance-spring。</message>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <!--
+                        1.0.x 的 Java 8 兼容性护栏：禁止误引入需要更高 JDK 或属于 Jakarta
+                        技术栈的依赖。升级这些依赖时必须进入 2.0.x 或 3.0.x 版本线。
+                    -->
+                    <execution>
+                        <id>enforce-java8-dependency-line</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>org.springframework:*:[6,)</exclude>
+                                        <exclude>jakarta.annotation:*</exclude>
+                                        <exclude>jakarta.servlet:*</exclude>
+                                        <exclude>com.baomidou:mybatis-plus-jsqlparser</exclude>
+                                        <exclude>com.github.jsqlparser:jsqlparser:[5,)</exclude>
+                                    </excludes>
+                                    <message>1.0.x 必须保持 JDK 8、Spring 5.3、javax API 和 JSqlParser 4.9 兼容。</message>
                                 </bannedDependencies>
                             </rules>
                         </configuration>

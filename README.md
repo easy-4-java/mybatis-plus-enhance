@@ -16,7 +16,15 @@ MyBatis-Plus 官方拦截器组合使用。
 
 ## 运行要求
 
-当前源码与构建基线如下：
+项目主版本线与 Java 基线严格对应：
+
+| 项目版本线 | Java 基线 | Spring 技术栈 | API 命名空间 | JSqlParser 适配 |
+|---|---:|---|---|---|
+| `1.0.x` | JDK 8 | Spring Framework 5.3.x | `javax.*` | `mybatis-plus-jsqlparser-4.9` |
+| `2.0.x` | JDK 17 | Spring Framework 6.2.x | `jakarta.*` | `mybatis-plus-jsqlparser` |
+| `3.0.x` | JDK 21 | 支持 JDK 21 的稳定版本 | `jakarta.*` | `mybatis-plus-jsqlparser` |
+
+当前分支是 `1.0.x`，源码与构建基线如下：
 
 | 组件           | 版本     |
 |--------------|--------|
@@ -25,6 +33,8 @@ MyBatis-Plus 官方拦截器组合使用。
 | MyBatis      | 3.5.19 |
 | MyBatis-Plus | 3.5.14 |
 | Hutool       | 5.8.40 |
+
+完整的依赖选择、源码约束和发布验证规则见 [版本兼容性策略](COMPATIBILITY.md)。
 
 Spring 集成已隔离到 `mybatis-plus-enhance-spring`。`core` 与 `extension` 保持 Spring 无关；
 普通 MyBatis-Plus 项目只需按能力选择 `core` 或 `extension`。

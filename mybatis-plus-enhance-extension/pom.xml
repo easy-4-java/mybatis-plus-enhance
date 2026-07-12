@@ -36,10 +36,10 @@
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-extension</artifactId>
         </dependency>
-        <!-- MyBatis-Plus JSqlParser：官方租户和数据权限扩展的 SQL 解析集成。 -->
+        <!-- MyBatis-Plus JSqlParser 4.9：JDK 8 对应的官方 SQL 解析集成。 -->
         <dependency>
             <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-jsqlparser</artifactId>
+            <artifactId>mybatis-plus-jsqlparser-4.9</artifactId>
         </dependency>
         <!-- JSqlParser：数据权限 Provider 和租户处理器公共 API 直接暴露 AST 类型。 -->
         <dependency>
