@@ -16,7 +16,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import lombok.Getter;
 import org.apache.ibatis.binding.MapperMethod;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
@@ -35,14 +34,14 @@ import java.util.function.Function;
  */
 public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> extends ServiceImpl<M, T> implements IEnhanceService<T> {
 
-    @Autowired
-    protected M enhanceMapper;
     /**
      * 数据签名和验签 Handler
      */
-    @Autowired
-    @Getter
-    protected DataSignatureHandler dataSignatureHandler;
+    protected final DataSignatureHandler dataSignatureHandler;
+
+    public EnhanceServiceImpl(DataSignatureHandler dataSignatureHandler) {
+        this.dataSignatureHandler = dataSignatureHandler;
+    }
 
     /**
      * 获取增强 Mapper，并在注入缺失时快速失败。
@@ -50,9 +49,9 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
      * @return 当前 Service 绑定的增强 Mapper
      */
     @Override
-    public M getEnhanceMapper() {
-        Assert.notNull(this.enhanceMapper, "enhanceMapper can not be null");
-        return this.enhanceMapper;
+    public M getBaseMapper() {
+        Assert.notNull(this.baseMapper, "baseMapper can not be null");
+        return this.baseMapper;
     }
 
     /**
