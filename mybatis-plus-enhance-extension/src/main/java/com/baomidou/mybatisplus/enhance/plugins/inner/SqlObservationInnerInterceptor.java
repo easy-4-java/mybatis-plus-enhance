@@ -1,4 +1,4 @@
-package com.baomidou.mybatisplus.enhance.plugins;
+package com.baomidou.mybatisplus.enhance.plugins.inner;
 
 import com.baomidou.mybatisplus.enhance.observation.SqlObservation;
 import com.baomidou.mybatisplus.enhance.observation.SqlObservationSink;

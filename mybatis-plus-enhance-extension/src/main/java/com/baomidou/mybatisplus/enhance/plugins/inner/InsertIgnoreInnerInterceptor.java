@@ -1,4 +1,4 @@
-package com.baomidou.mybatisplus.enhance.plugins;
+package com.baomidou.mybatisplus.enhance.plugins.inner;
 
 import com.baomidou.mybatisplus.enhance.context.InsertIgnoreContext;
 import org.apache.commons.lang3.StringUtils;

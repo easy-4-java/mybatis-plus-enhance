@@ -1,4 +1,4 @@
-package com.baomidou.mybatisplus.enhance.plugins;
+package com.baomidou.mybatisplus.enhance.plugins.inner;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -1,4 +1,4 @@
-package com.baomidou.mybatisplus.enhance.plugins;
+package com.baomidou.mybatisplus.enhance.plugins.inner;
 
 import cn.hutool.core.util.ReflectUtil;
 import com.baomidou.mybatisplus.core.conditions.AbstractWrapper;
