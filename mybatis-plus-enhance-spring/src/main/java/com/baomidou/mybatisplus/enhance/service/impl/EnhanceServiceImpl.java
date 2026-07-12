@@ -37,6 +37,7 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
     /**
      * 数据签名和验签 Handler
      */
+    @Getter
     protected final DataSignatureHandler dataSignatureHandler;
 
     public EnhanceServiceImpl(DataSignatureHandler dataSignatureHandler) {
@@ -52,6 +53,19 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
     public M getBaseMapper() {
         Assert.notNull(this.baseMapper, "baseMapper can not be null");
         return this.baseMapper;
+    }
+
+    /**
+     * 获取具备原始密文查询能力的增强 Mapper。
+     *
+     * <p>当前泛型已经约束 {@code M extends EnhanceBaseMapper<T>}，因此直接复用经过非空
+     * 校验的 {@link #getBaseMapper()}，避免每个业务 Service 重复实现同一适配方法。</p>
+     *
+     * @return 当前 Service 绑定的增强 Mapper
+     */
+    @Override
+    public M getEnhanceMapper() {
+        return getBaseMapper();
     }
 
     /**
