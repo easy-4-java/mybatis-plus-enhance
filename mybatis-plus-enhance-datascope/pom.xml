@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.hiwepy</groupId>
+        <artifactId>mybatis-plus-enhance</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>mybatis-plus-enhance-datascope</artifactId>
+    <name>MyBatis-Plus Enhance :: Data Scope</name>
+    <description>基于官方 DataPermissionInterceptor 的注解式数据权限扩展。</description>
+    <dependencies>
+        <!--
+            MyBatis-Plus JSqlParser：提供官方 DataPermissionInterceptor、
+            MultiDataPermissionHandler 以及与 MyBatis-Plus 版本匹配的 SQL 解析集成。
+        -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+        </dependency>
+        <!--
+            JSqlParser：DataScopeExpressionProvider 的公共方法直接暴露 Expression 与 Table，
+            DataScopeExpressions 也直接构造 AST，因此不能只依赖传递引入。
+        -->
+        <dependency>
+            <groupId>com.github.jsqlparser</groupId>
+            <artifactId>jsqlparser</artifactId>
+        </dependency>
+        <!-- Commons Lang3：Mapper ID、别名和注解字符串配置的通用处理。 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <!-- SLF4J API：记录无效 Mapper ID 和无法解析的 Mapper 类型。 -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <!-- Lombok：生成 Provider Getter 和 @Slf4j 字段，仅参与编译。 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</project>

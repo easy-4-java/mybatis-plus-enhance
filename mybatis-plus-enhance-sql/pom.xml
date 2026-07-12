@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.hiwepy</groupId>
+        <artifactId>mybatis-plus-enhance</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>mybatis-plus-enhance-sql</artifactId>
+    <name>MyBatis-Plus Enhance :: SQL</name>
+    <description>INSERT IGNORE 作用域、超长 SQL 检测等语句级增强。</description>
+    <dependencies>
+        <!-- Enhance Core：InsertIgnore 与 LongSql 拦截器接入统一 InnerInterceptor 链。 -->
+        <dependency>
+            <groupId>io.github.hiwepy</groupId>
+            <artifactId>mybatis-plus-enhance-core</artifactId>
+        </dependency>
+        <!-- MyBatis Core：访问 StatementHandler、BoundSql、MappedStatement 和 MetaObject。 -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+        </dependency>
+        <!-- TransmittableThreadLocal：INSERT IGNORE 作用域在线程池任务中的透传和恢复。 -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>transmittable-thread-local</artifactId>
+        </dependency>
+        <!-- Commons Lang3：SQL 文本和 Mapper ID 的空值、截断及格式处理。 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <!-- SLF4J API：输出超长 SQL 告警，不绑定具体日志实现。 -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <!-- Lombok：生成阈值属性访问器与 @Slf4j 字段，仅参与编译。 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</project>

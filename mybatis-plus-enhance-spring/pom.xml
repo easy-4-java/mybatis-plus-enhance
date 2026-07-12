@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.hiwepy</groupId>
+        <artifactId>mybatis-plus-enhance</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <properties>
+        <!-- 本模块承担 Spring 适配职责，明确放行父 POM 的 Spring 禁止规则。 -->
+        <allow.spring.dependencies>true</allow.spring.dependencies>
+    </properties>
+    <artifactId>mybatis-plus-enhance-spring</artifactId>
+    <name>MyBatis-Plus Enhance :: Spring</name>
+    <description>基于 Spring 事务和依赖注入的增强 Service 集成。</description>
+    <dependencies>
+        <!-- Crypto：IEnhanceService 和 EnhanceServiceImpl 直接复用签名处理器与 EnhanceBaseMapper。 -->
+        <dependency>
+            <groupId>io.github.hiwepy</groupId>
+            <artifactId>mybatis-plus-enhance-crypto</artifactId>
+        </dependency>
+        <!-- MyBatis Core：Service API 暴露 ResultHandler，并处理 MapperMethod 参数。 -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+        </dependency>
+        <!-- MyBatis-Plus Core：Wrapper、IPage、TableInfo、SqlMethod 和工具类。 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-core</artifactId>
+        </dependency>
+        <!-- MyBatis-Plus Extension：IService、ServiceImpl 和 SqlHelper。 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-extension</artifactId>
+        </dependency>
+        <!-- MyBatis-Plus Spring：3.5.14 中 Service 实现依赖的 Spring 桥接模块。 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring</artifactId>
+        </dependency>
+        <!-- Spring Beans：EnhanceServiceImpl 的依赖注入注解和 Bean 基础设施。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+        </dependency>
+        <!-- Spring TX：Service 写操作的 @Transactional 事务语义。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+        </dependency>
+        <!-- Lombok：生成 Service Getter 等编译期代码，不向使用方传播。 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- MyBatis-Plus Annotation：测试实体使用 @TableName、@TableId 等映射注解。 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-annotation</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Spring Context：测试 Service、Component 等容器注解。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Spring Web：测试控制器示例使用 Web MVC 注解。 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Jakarta Annotation：测试示例使用资源注入和生命周期注解。 -->
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Jakarta Servlet：测试 Web 示例编译所需，不进入主构件。 -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
