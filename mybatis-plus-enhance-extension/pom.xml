@@ -15,6 +15,11 @@
     <description>加密、租户、数据权限、国际化、SQL 处理与执行观测等可插拔增强实现。</description>
 
     <dependencies>
+        <!-- 公共 Annotation：Extension 直接使用 crypto/i18n 类型，遵循“直接使用、直接声明”。 -->
+        <dependency>
+            <groupId>io.github.hiwepy</groupId>
+            <artifactId>mybatis-enhance-annotation</artifactId>
+        </dependency>
         <!-- Core：统一拦截器链、执行后生命周期和公共参数工具。 -->
         <dependency>
             <groupId>io.github.hiwepy</groupId>

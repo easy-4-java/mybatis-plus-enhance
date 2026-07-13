@@ -8,10 +8,10 @@ import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.core.toolkit.AnnotationUtils;
-import com.baomidou.mybatisplus.enhance.crypto.annotation.EncryptedField;
-import com.baomidou.mybatisplus.enhance.crypto.annotation.EncryptedTable;
-import com.baomidou.mybatisplus.enhance.crypto.annotation.TableSignature;
-import com.baomidou.mybatisplus.enhance.crypto.annotation.TableSignatureField;
+import org.apache.mybatis.enhance.annotation.crypto.EncryptedField;
+import org.apache.mybatis.enhance.annotation.crypto.EncryptedTable;
+import org.apache.mybatis.enhance.annotation.crypto.TableSignature;
+import org.apache.mybatis.enhance.annotation.crypto.TableSignatureField;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;

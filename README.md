@@ -39,6 +39,9 @@ MyBatis-Plus 官方拦截器组合使用。
 Spring 集成已隔离到 `mybatis-plus-enhance-spring`。`core` 与 `extension` 保持 Spring 无关；
 普通 MyBatis-Plus 项目只需按能力选择 `core` 或 `extension`。
 
+公共加密和国际化注解统一复用 `mybatis-enhance-annotation`，MyBatis-Plus 项目不维护重复协议；
+唯一的 Plus 专属数据权限注解随 Extension 提供，不为单个注解拆分独立 Maven 模块。
+
 ## 引入依赖
 
 ```xml

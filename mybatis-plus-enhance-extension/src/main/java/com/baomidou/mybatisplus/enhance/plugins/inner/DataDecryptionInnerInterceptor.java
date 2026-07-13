@@ -3,7 +3,7 @@ package com.baomidou.mybatisplus.enhance.plugins.inner;
 import cn.hutool.core.util.ReflectUtil;
 import com.baomidou.mybatisplus.core.toolkit.AnnotationUtils;
 import com.baomidou.mybatisplus.core.toolkit.ObjectUtils;
-import com.baomidou.mybatisplus.enhance.crypto.annotation.IgnoreEncrypted;
+import org.apache.mybatis.enhance.annotation.crypto.IgnoreEncrypted;
 import com.baomidou.mybatisplus.enhance.crypto.handler.DataEncryptionHandler;
 import com.baomidou.mybatisplus.enhance.crypto.handler.DefaultDataEncryptionHandler;
 import com.baomidou.mybatisplus.enhance.crypto.handler.EncryptedFieldHandler;

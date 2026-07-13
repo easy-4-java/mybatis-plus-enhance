@@ -1,6 +1,6 @@
 package com.baomidou.mybatisplus.enhance.datascope.handler;
 
-import com.baomidou.mybatisplus.enhance.datascope.annotation.DataScopePlus;
+import com.baomidou.mybatisplus.enhance.annotation.datascope.DataScopePlus;
 import com.baomidou.mybatisplus.extension.plugins.handler.MultiDataPermissionHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

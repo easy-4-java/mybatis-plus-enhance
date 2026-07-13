@@ -41,10 +41,11 @@
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring</artifactId>
         </dependency>
-        <!-- Spring Beans：EnhanceServiceImpl 的依赖注入注解和 Bean 基础设施。 -->
+        <!-- Spring Beans：测试示例使用 @Autowired，生产代码不直接依赖。 -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-beans</artifactId>
+            <scope>test</scope>
         </dependency>
         <!-- Spring TX：Service 写操作的 @Transactional 事务语义。 -->
         <dependency>
@@ -61,6 +62,12 @@
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-annotation</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- 公共 Annotation：测试实体使用表签名注解。 -->
+        <dependency>
+            <groupId>io.github.hiwepy</groupId>
+            <artifactId>mybatis-enhance-annotation</artifactId>
             <scope>test</scope>
         </dependency>
         <!-- Spring Context：测试 Service、Component 等容器注解。 -->
