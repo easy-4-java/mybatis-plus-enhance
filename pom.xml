@@ -80,6 +80,7 @@
         <module>mybatis-plus-enhance-core</module>
         <module>mybatis-plus-enhance-extension</module>
         <module>mybatis-plus-enhance-spring</module>
+        <module>mybatis-plus-enhance-alignment-test</module>
     </modules>
 
     <properties>
