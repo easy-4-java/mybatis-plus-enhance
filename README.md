@@ -145,11 +145,14 @@ public interface EncryptedFieldHandler {
     <T> String encrypt(T value);
     <T> T decrypt(String value, Class<T> rtType);
     <T> String hmac(T value);
+
+    <T> boolean verifyHmac(T value, String signature);
 }
 ```
 
-项目提供基于 Hutool、Jackson 和 HMAC 的 `DefaultEncryptedFieldHandler`。构造器接收的密钥和 IV 是 Base64 文本；应用应从
-KMS、密钥文件或受保护的环境配置加载，不应硬编码在仓库中。
+项目提供基于 Hutool、Jackson 和 HMAC 的 `DefaultEncryptedFieldHandler`。默认协议强制使用独立的
+加密密钥与认证密钥，每次加密生成随机 IV，并输出携带 `version/keyId/algorithm/mode/padding/iv/ciphertext/mac`
+的版本化信封。应用应通过 `CryptoKeyProvider` 对接 KMS、HSM 或受保护配置，不应把密钥硬编码到仓库。
 
 ```java
 EncryptedFieldHandler handler = new DefaultEncryptedFieldHandler(
@@ -158,19 +161,20 @@ EncryptedFieldHandler handler = new DefaultEncryptedFieldHandler(
         HmacAlgorithm.HmacSHA256,
         Mode.CBC,
         Padding.PKCS5Padding,
-        base64Key,
-        base64Iv,
-        true
+        new StaticCryptoKeyProvider(new CryptoKeyMaterial(
+                "customer-v1",
+                encryptionKeyBytes,
+                authenticationKeyBytes))
 );
 ```
 
 注意：
 
 - 加密字段不适合数据库端的 `LIKE`、范围比较、排序和聚合；
-- 等值查询只有在算法输出稳定且查询参数经过同一处理器时才可匹配；
+- 随机 IV 密文不支持直接等值查询；需要等值检索时应增加使用独立密钥生成的盲索引列；
 - Wrapper 中无法定位实体字段元数据的简单参数不会被盲目加密；
 - 默认处理器不记录明文、完整密文、密钥、IV 或 HMAC；自定义处理器也必须遵守相同约束；
-- 密钥轮换需要显式的版本字段、双读或离线迁移方案，本组件不会自动猜测密钥版本。
+- 密文和 HMAC 携带 `keyId`；轮换时由 `CryptoKeyProvider` 同时提供当前密钥与受控历史密钥。
 
 ## 表级签名与验签
 

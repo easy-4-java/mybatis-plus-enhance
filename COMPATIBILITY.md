@@ -19,6 +19,7 @@
 4. 构建产物的 Class 文件版本必须与基线一致；
 5. Spring、Servlet、Annotation 等生态依赖必须使用一致的 `javax` 或 `jakarta` 命名空间；
 6. CI 必须至少在基线 JDK 上执行 `clean verify`，可额外在更高 JDK 上验证向前兼容性。
+7. 每条版本线必须执行真实 H2 组合测试，覆盖缓存、加密、签名、补签和增强 SQL Injector。
 
 ## 当前 1.0.x 基线
 
@@ -45,6 +46,9 @@
 - 同一功能应优先保持公共 API 语义一致，使用不同版本线内部实现适配 Java 和三方组件差异。
 
 ## 发布前验证
+
+仓库的兼容矩阵会分别检出 `feature/1.0.x`、`feature/2.0.x` 和 `feature/3.0.x`，并在
+JDK 8、17、21 基线上执行 `mvn clean verify`；不同版本线不通过 Maven Profile 共享 Java 语法或依赖配置。
 
 在对应版本线的基线 JDK 下执行：
 
