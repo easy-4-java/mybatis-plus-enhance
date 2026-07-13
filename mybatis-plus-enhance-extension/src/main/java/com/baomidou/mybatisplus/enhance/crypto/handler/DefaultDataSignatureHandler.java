@@ -13,14 +13,10 @@ import com.baomidou.mybatisplus.core.toolkit.ExceptionUtils;
 import com.baomidou.mybatisplus.enhance.util.TableFieldHelper;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.mybatis.enhance.annotation.crypto.TableSignature;
 import org.apache.mybatis.enhance.annotation.crypto.TableSignatureField;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * 基于 MyBatis-Plus 表元数据的默认数据签名处理器。
@@ -32,10 +28,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DefaultDataSignatureHandler implements DataSignatureHandler {
 
-    /**
-     * 变量占位符正则
-     */
-    public static final Pattern PARAM_PAIRS_RE = Pattern.compile("#\\{ew\\.paramNameValuePairs\\.(" + Constants.WRAPPER_PARAM + "\\d+)\\}");
     /**
      * 加解密处理器，加解密的情况都在该处理器中自行判断
      */

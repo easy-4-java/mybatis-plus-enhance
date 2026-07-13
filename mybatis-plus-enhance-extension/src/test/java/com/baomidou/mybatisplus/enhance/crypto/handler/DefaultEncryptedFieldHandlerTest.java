@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.Base64;
 
 import static org.junit.Assert.*;
 
@@ -36,8 +37,11 @@ public class DefaultEncryptedFieldHandlerTest {
     public void shouldRejectTamperedCiphertextBeforeDecrypt() {
         DefaultEncryptedFieldHandler handler = createHandler(key("v1", '1', 'a'));
         String encrypted = handler.encrypt("sensitive-data");
-        String tampered = encrypted.substring(0, encrypted.length() - 1)
-                + (encrypted.endsWith("A") ? "B" : "A");
+        String[] parts = encrypted.split("\\.", -1);
+        byte[] mac = Base64.getUrlDecoder().decode(parts[parts.length - 1]);
+        mac[0] ^= 1;
+        parts[parts.length - 1] = Base64.getUrlEncoder().withoutPadding().encodeToString(mac);
+        String tampered = String.join(".", parts);
 
         try {
             handler.decrypt(tampered, String.class);

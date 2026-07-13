@@ -158,11 +158,14 @@ public interface EncryptedFieldHandler {
     <T> T decrypt(String value, Class<T> rtType);
 
     <T> String hmac(T value);
+
+    <T> boolean verifyHmac(T value, String signature);
 }
 ```
 
-项目提供基于 Hutool、Jackson 和 HMAC 的 `DefaultEncryptedFieldHandler`。构造器接收的密钥和 IV 是 Base64 文本；应用应从
-KMS、密钥文件或受保护的环境配置加载，不应硬编码在仓库中。
+项目提供基于 Hutool、Jackson 和 HMAC 的 `DefaultEncryptedFieldHandler`。默认协议强制使用独立的
+加密密钥与认证密钥，每次加密生成随机 IV，并输出携带 `version/keyId/algorithm/mode/padding/iv/ciphertext/mac`
+的版本化信封。应用应通过 `CryptoKeyProvider` 对接 KMS、HSM 或受保护配置，不应把密钥硬编码到仓库。
 
 ```java
 EncryptedFieldHandler handler = new DefaultEncryptedFieldHandler(
@@ -171,19 +174,20 @@ EncryptedFieldHandler handler = new DefaultEncryptedFieldHandler(
         HmacAlgorithm.HmacSHA256,
         Mode.CBC,
         Padding.PKCS5Padding,
-        base64Key,
-        base64Iv,
-        true
+        new StaticCryptoKeyProvider(new CryptoKeyMaterial(
+                "customer-v1",
+                encryptionKeyBytes,
+                authenticationKeyBytes))
 );
 ```
 
 注意：
 
 - 加密字段不适合数据库端的 `LIKE`、范围比较、排序和聚合；
-- 等值查询只有在算法输出稳定且查询参数经过同一处理器时才可匹配；
+- 随机 IV 密文不支持直接等值查询；需要等值检索时应增加使用独立密钥生成的盲索引列；
 - Wrapper 中无法定位实体字段元数据的简单参数不会被盲目加密；
 - 默认处理器不记录明文、完整密文、密钥、IV 或 HMAC；自定义处理器也必须遵守相同约束；
-- 密钥轮换需要显式的版本字段、双读或离线迁移方案，本组件不会自动猜测密钥版本。
+- 密文和 HMAC 携带 `keyId`；轮换时由 `CryptoKeyProvider` 同时提供当前密钥与受控历史密钥。
 
 ## 表级签名与验签
 
@@ -397,7 +401,7 @@ public final class AuditInnerInterceptor implements EnhanceInnerInterceptor {
 
 该接口保留官方 `InnerInterceptor` 的全部前置钩子，并增加：
 
-- `afterQuery`：查询成功并完成结果映射后；
+- `afterQuery`：查询成功并完成结果映射后，返回隔离于 MyBatis 缓存对象的转换结果；
 - `afterUpdate`：更新成功后；
 - `afterExecution`：查询或更新最终完成后，成功与失败都会调用。
 
@@ -406,8 +410,8 @@ public final class AuditInnerInterceptor implements EnhanceInnerInterceptor {
 
 ## 安全与运维建议
 
-- 密钥、IV 和 HMAC 密钥必须由受控密钥系统提供，禁止提交到 Git、打印到日志或暴露在异常信息中；
-- 加密与签名建议使用不同密钥，并记录密钥版本以支持轮换；
+- 加密密钥和 HMAC 密钥必须由受控密钥系统提供并相互独立，禁止提交到 Git、打印到日志或暴露在异常信息中；
+- 密文信封必须保留版本和 keyId；历史密钥只能用于读取，不得继续用于新写入；
 - 不要记录完整 SQL 参数、明文敏感字段或解密结果；
 - 租户与数据权限必须采用“上下文缺失即拒绝”的默认策略；
 - 为拦截器顺序建立集成测试，覆盖插入、更新、批量操作、Wrapper、自定义 XML、缓存命中和异常路径；
@@ -468,7 +472,8 @@ mvn -Prelease deploy
 `SNAPSHOT` 和正式版本分别路由到父 POM 的 `snapshotRepository` 与 `repository`。对应 Server ID
 的凭据同样只能存放在本机或 CI 的 `settings.xml`，不得写入项目 POM。
 
-新增密码算法、权限表达式或拦截器时，应补充单元测试和真实数据库集成测试。尤其要验证参数对象是否被就地修改、上下文是否在异常后恢复、插件顺序是否符合预期。
+新增密码算法、权限表达式或拦截器时，应补充单元测试和真实数据库集成测试。当前 H2 组合测试覆盖真实
+`SqlSession`、一级缓存、加密、签名、验签、解密、部分更新拒绝和签名列专用更新；同时必须验证上下文是否在异常后恢复、插件顺序是否符合预期。
 
 ## License
 
