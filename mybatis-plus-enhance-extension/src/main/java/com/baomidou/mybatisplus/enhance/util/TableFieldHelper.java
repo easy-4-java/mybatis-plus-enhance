@@ -27,7 +27,10 @@ import java.util.stream.Collectors;
 public class TableFieldHelper {
 
     /**
-     * 校验该实例的类是否被 @EncryptedTable所注解
+     * 判断实例类型是否声明 {@link EncryptedTable}。
+     *
+     * @param object 待检查实例
+     * @return 实例类型声明加密表注解时返回 {@code true}
      */
     public static boolean isExistEncryptedTable(Object object) {
         Class<?> objectClass = object.getClass();
@@ -40,7 +43,10 @@ public class TableFieldHelper {
     }
 
     /**
-     * 校验该实例的类是否被@EncryptedTable所注解
+     * 判断类型是否声明 {@link EncryptedTable}。
+     *
+     * @param objectClass 待检查类型
+     * @return 类型声明加密表注解时返回 {@code true}
      */
     public static boolean isExistEncryptedTable(Class<?> objectClass) {
         EncryptedTable encryptedTable = AnnotationUtils.findFirstAnnotation(EncryptedTable.class, objectClass);
@@ -49,11 +55,12 @@ public class TableFieldHelper {
 
     /**
      * <p>
-     * 判断主键注解是否存在
+     * 判断字段集合中是否存在加密字段注解。
      * </p>
      *
      * @param list 字段列表
-     * @return true 为存在 {@link TableId} 注解;
+     * @param annotationHandler MyBatis-Plus 注解解析器
+     * @return 存在 {@link EncryptedField} 时返回 {@code true}
      */
     public static boolean isExistTableCryptoField(List<Field> list, AnnotationHandler annotationHandler) {
         return list.stream().anyMatch(field -> annotationHandler.isAnnotationPresent(field, EncryptedField.class));

@@ -1,6 +1,7 @@
 package com.baomidou.mybatisplus.enhance.plugins;
 
 import com.baomidou.mybatisplus.enhance.plugins.inner.EnhanceInnerInterceptor;
+import com.baomidou.mybatisplus.enhance.plugins.inner.EnhancePhase;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.InnerInterceptor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ import org.apache.ibatis.session.RowBounds;
 import java.sql.Connection;
 import java.util.Collections;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Objects;
 
 /**
@@ -41,6 +43,53 @@ import java.util.Objects;
 })
 @Slf4j
 public class MybatisPlusEnhanceInterceptor extends MybatisPlusInterceptor {
+
+    /**
+     * 注册内部拦截器并立即校验框架增强阶段顺序。
+     *
+     * @param innerInterceptor 待注册拦截器
+     */
+    @Override
+    public void addInnerInterceptor(InnerInterceptor innerInterceptor) {
+        Objects.requireNonNull(innerInterceptor, "innerInterceptor must not be null");
+        List<InnerInterceptor> candidate = new ArrayList<>(getInterceptors());
+        candidate.add(innerInterceptor);
+        validateEnhanceOrder(candidate);
+        super.addInnerInterceptor(innerInterceptor);
+    }
+
+    /**
+     * 批量设置内部拦截器，并在写入父类前验证阶段顺序。
+     *
+     * @param interceptors 完整拦截器列表
+     */
+    @Override
+    public void setInterceptors(List<InnerInterceptor> interceptors) {
+        Objects.requireNonNull(interceptors, "interceptors must not be null");
+        validateEnhanceOrder(interceptors);
+        super.setInterceptors(interceptors);
+    }
+
+    private void validateEnhanceOrder(List<InnerInterceptor> interceptors) {
+        EnhancePhase previousPhase = null;
+        Class<?> previousType = null;
+        for (InnerInterceptor interceptor : interceptors) {
+            if (!(interceptor instanceof EnhanceInnerInterceptor)) {
+                continue;
+            }
+            EnhancePhase phase = ((EnhanceInnerInterceptor) interceptor).phase();
+            if (phase == EnhancePhase.UNSPECIFIED) {
+                continue;
+            }
+            if (Objects.nonNull(previousPhase) && phase.getOrder() < previousPhase.getOrder()) {
+                throw new IllegalArgumentException("Invalid enhance interceptor order: "
+                        + interceptor.getClass().getName() + " [" + phase + "] must not run after "
+                        + previousType.getName() + " [" + previousPhase + "]");
+            }
+            previousPhase = phase;
+            previousType = interceptor.getClass();
+        }
+    }
 
     /**
      * 分派 MyBatis Executor 与 StatementHandler 生命周期。
@@ -126,7 +175,10 @@ public class MybatisPlusEnhanceInterceptor extends MybatisPlusInterceptor {
             for (InnerInterceptor interceptor : super.getInterceptors()) {
                 if (interceptor instanceof EnhanceInnerInterceptor) {
                     EnhanceInnerInterceptor enhanceInterceptor = (EnhanceInnerInterceptor) interceptor;
-                    enhanceInterceptor.afterQuery(executor, ms, parameter, rowBounds, resultHandler, boundSql, result);
+                    result = Objects.requireNonNull(
+                            enhanceInterceptor.afterQuery(
+                                    executor, ms, parameter, rowBounds, resultHandler, boundSql, result),
+                            () -> enhanceInterceptor.getClass().getName() + " returned a null query result");
                 }
             }
             return result;

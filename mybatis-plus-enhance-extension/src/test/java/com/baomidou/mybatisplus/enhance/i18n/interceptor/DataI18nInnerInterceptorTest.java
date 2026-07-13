@@ -31,9 +31,31 @@ public class DataI18nInnerInterceptorTest {
         Assert.assertTrue(invoked.get());
     }
 
+    @Test
+    public void shouldInternationalizeDetachedResult() throws Exception {
+        DataI18nInnerInterceptor interceptor = new DataI18nInnerInterceptor(
+                () -> Locale.CHINA,
+                (locale, mappedStatement, results) -> ((MutableResult) results.get(0)).value = "translated");
+        MutableResult cached = new MutableResult();
+        cached.value = "raw";
+        List<Object> results = new ArrayList<>();
+        results.add(cached);
+
+        List<Object> transformed = interceptor.afterQuery(
+                null, mappedStatement(), null, null, null, null, results);
+
+        Assert.assertEquals("raw", cached.value);
+        Assert.assertEquals("translated", ((MutableResult) transformed.get(0)).value);
+        Assert.assertNotSame(cached, transformed.get(0));
+    }
+
     private MappedStatement mappedStatement() {
         Configuration configuration = new Configuration();
         return new MappedStatement.Builder(configuration, "Mapper.select",
                 new StaticSqlSource(configuration, "SELECT 1"), SqlCommandType.SELECT).build();
+    }
+
+    public static class MutableResult {
+        private String value;
     }
 }

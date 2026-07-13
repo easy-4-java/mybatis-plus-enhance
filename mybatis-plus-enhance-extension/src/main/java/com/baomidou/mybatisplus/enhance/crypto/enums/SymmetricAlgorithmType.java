@@ -16,20 +16,66 @@ import lombok.Getter;
 @Getter
 public enum SymmetricAlgorithmType {
 
+    /**
+     * 高级加密标准（AES），新系统的通用首选算法。
+     */
     AES(SymmetricAlgorithm.AES.name()),
+
+    /**
+     * ARCFOUR/RC4 流密码，仅用于兼容历史密文。
+     */
     ARCFOUR(SymmetricAlgorithm.ARCFOUR.name()),
+
+    /**
+     * Blowfish 分组密码，仅用于兼容已有系统。
+     */
     Blowfish(SymmetricAlgorithm.Blowfish.name()),
+
+    /**
+     * DES 分组密码，安全强度不足，仅用于历史兼容。
+     */
     DES(SymmetricAlgorithm.DES.name()),
+
+    /**
+     * 三重 DES（DESede），仅用于兼容历史密文。
+     */
     DESede(SymmetricAlgorithm.DESede.name()),
+
+    /**
+     * RC2 分组密码，仅用于兼容已有系统。
+     */
     RC2(SymmetricAlgorithm.RC2.name()),
+
+    /**
+     * 基于 MD5 与 DES 的口令加密算法，仅用于兼容历史数据。
+     */
     PBEWithMD5AndDES(SymmetricAlgorithm.PBEWithMD5AndDES.name()),
+
+    /**
+     * 基于 SHA-1 与三重 DES 的口令加密算法，仅用于历史兼容。
+     */
     PBEWithSHA1AndDESede(SymmetricAlgorithm.PBEWithSHA1AndDESede.name()),
+
+    /**
+     * 基于 SHA-1 与 40 位 RC2 的口令加密算法，仅用于历史兼容。
+     */
     PBEWithSHA1AndRC2_40(SymmetricAlgorithm.PBEWithSHA1AndRC2_40.name()),
 
+    /**
+     * 中国商用密码分组算法 SM4。
+     */
     SM4("SM4");
 
+    /**
+     * 传递给 Hutool/JCE 的标准算法名称。
+     */
     private final String name;
 
+    /**
+     * 创建算法类型。
+     *
+     * @param name Hutool/JCE 算法名称
+     */
     SymmetricAlgorithmType(String name) {
         this.name = name;
     }

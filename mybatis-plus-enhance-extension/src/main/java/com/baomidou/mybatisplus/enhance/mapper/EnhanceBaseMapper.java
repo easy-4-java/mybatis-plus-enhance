@@ -79,4 +79,16 @@ public interface EnhanceBaseMapper<T> extends BaseMapper<T> {
     @IgnoreEncrypted
     <E> List<E> selectIgnoreDecryptObjs(@Param(Constants.WRAPPER) Wrapper<T> queryWrapper);
 
+    /**
+     * 按主键仅更新实体的表签名存储列。
+     *
+     * <p>该方法由框架补签流程调用，不更新其他业务字段，并通过
+     * {@link IgnoreEncrypted} 避免原始密文被再次加密。</p>
+     *
+     * @param entity 包含主键和最新签名值的实体
+     * @return 受影响行数
+     */
+    @IgnoreEncrypted
+    int updateSignatureById(@Param(Constants.ENTITY) T entity);
+
 }

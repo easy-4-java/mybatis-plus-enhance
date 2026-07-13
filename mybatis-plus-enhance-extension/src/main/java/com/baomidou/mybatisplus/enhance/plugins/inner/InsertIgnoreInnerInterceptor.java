@@ -22,6 +22,14 @@ import java.util.regex.Pattern;
  */
 public class InsertIgnoreInnerInterceptor implements EnhanceInnerInterceptor {
 
+    @Override
+    public EnhancePhase phase() {
+        return EnhancePhase.SQL_REWRITE;
+    }
+
+    /**
+     * 匹配 SQL 起始位置普通 INSERT 关键字、并排除已有 IGNORE 的表达式。
+     */
     private static final Pattern INSERT_PATTERN = Pattern.compile(
             "^(\\s*)INSERT\\s+(?!IGNORE\\b)", Pattern.CASE_INSENSITIVE);
 

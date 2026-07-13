@@ -21,10 +21,21 @@ import java.util.Objects;
 @Slf4j
 public class LongSqlInnerInterceptor implements EnhanceInnerInterceptor {
 
+    @Override
+    public EnhancePhase phase() {
+        return EnhancePhase.OBSERVATION;
+    }
+
+    /**
+     * 判定为超长 SQL 的字符数阈值；小于等于零时关闭检测。
+     */
     @Getter
     @Setter
     private int longSqlThreshold = 2000;
 
+    /**
+     * 超长 SQL 的可选业务回调。
+     */
     @Getter
     @Setter
     private LongSqlHandler longSqlHandler;

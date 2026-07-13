@@ -26,12 +26,32 @@ import lombok.Getter;
 @Getter
 public enum BooleanEnum implements IEnum<Integer> {
 
+    /**
+     * 数据库存储值 {@code 0}，表示逻辑假。
+     */
     IS_FALSE(false, "否"),
+
+    /**
+     * 数据库存储值 {@code 1}，表示逻辑真。
+     */
     IS_TRUE(true, "是");
 
+    /**
+     * Java 布尔语义值。
+     */
     private final boolean booleanValue;
+
+    /**
+     * 面向中文展示的枚举名称。
+     */
     private final String nameCn;
 
+    /**
+     * 创建数据库整型布尔枚举。
+     *
+     * @param booleanValue Java 布尔语义值
+     * @param nameCn       中文展示名称
+     */
     BooleanEnum(boolean booleanValue, String nameCn) {
         this.booleanValue = booleanValue;
         this.nameCn = nameCn;
@@ -53,6 +73,11 @@ public enum BooleanEnum implements IEnum<Integer> {
         throw new IllegalArgumentException("Unsupported boolean database value: " + value);
     }
 
+    /**
+     * 获取 MyBatis-Plus 写入数据库的枚举值。
+     *
+     * @return {@code false} 对应 {@code 0}，{@code true} 对应 {@code 1}
+     */
     @Override
     public Integer getValue() {
         return booleanValue ? 1 : 0;
