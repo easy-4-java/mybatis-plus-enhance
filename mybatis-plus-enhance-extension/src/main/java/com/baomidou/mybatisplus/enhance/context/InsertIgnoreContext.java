@@ -13,8 +13,14 @@ import java.util.Objects;
  */
 public final class InsertIgnoreContext {
 
+    /**
+     * 当前执行链进入 {@code INSERT IGNORE} 作用域的嵌套深度。
+     */
     private static final TransmittableThreadLocal<Integer> DEPTH = new TransmittableThreadLocal<>();
 
+    /**
+     * 工具类不允许实例化。
+     */
     private InsertIgnoreContext() {
     }
 
@@ -59,9 +65,21 @@ public final class InsertIgnoreContext {
      */
     public static final class Scope implements AutoCloseable {
 
+        /**
+         * 打开当前作用域前的嵌套深度；未启用时为 {@code null}。
+         */
         private final Integer previousDepth;
+
+        /**
+         * 是否已经完成恢复，防止重复关闭破坏外层作用域。
+         */
         private boolean closed;
 
+        /**
+         * 创建作用域恢复句柄。
+         *
+         * @param previousDepth 打开作用域前的嵌套深度
+         */
         private Scope(Integer previousDepth) {
             this.previousDepth = previousDepth;
         }

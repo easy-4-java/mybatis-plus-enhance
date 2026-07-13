@@ -40,6 +40,11 @@ public class DefaultDataEncryptionHandler implements DataEncryptionHandler {
     @Getter
     private final EncryptedFieldHandler encryptedFieldHandler;
 
+    /**
+     * 创建默认实体与 Wrapper 加解密处理器。
+     *
+     * @param encryptedFieldHandler 负责单字段密码运算的处理器
+     */
     public DefaultDataEncryptionHandler(EncryptedFieldHandler encryptedFieldHandler) {
         this.encryptedFieldHandler = encryptedFieldHandler;
     }

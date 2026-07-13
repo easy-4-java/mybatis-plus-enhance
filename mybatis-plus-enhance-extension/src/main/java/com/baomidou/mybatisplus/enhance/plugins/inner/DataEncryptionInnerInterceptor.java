@@ -13,7 +13,6 @@ import com.baomidou.mybatisplus.enhance.crypto.handler.EncryptedFieldHandler;
 import com.baomidou.mybatisplus.enhance.util.EnhanceConstants;
 import com.baomidou.mybatisplus.enhance.util.ParameterUtils;
 import com.baomidou.mybatisplus.extension.parser.JsqlParserSupport;
-import com.baomidou.mybatisplus.extension.plugins.inner.InnerInterceptor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.executor.Executor;
@@ -39,12 +38,21 @@ import java.util.Set;
  * {@link DataSignatureInnerInterceptor} 之前，使签名覆盖实际入库密文。
  */
 @Slf4j
-public class DataEncryptionInnerInterceptor extends JsqlParserSupport implements InnerInterceptor {
+public class DataEncryptionInnerInterceptor extends JsqlParserSupport implements EnhanceInnerInterceptor {
 
+    @Override
+    public EnhancePhase phase() {
+        return EnhancePhase.PARAMETER_ENCRYPTION;
+    }
+
+    /**
+     * 对实体和 Wrapper 参数执行字段加密的处理器。
+     */
     @Getter
     private final DataEncryptionHandler dataEncryptionHandler;
+
     /**
-     * 是否开启数据加密
+     * 是否开启数据加密。
      */
     @Getter
     private final boolean encryptSwitch;

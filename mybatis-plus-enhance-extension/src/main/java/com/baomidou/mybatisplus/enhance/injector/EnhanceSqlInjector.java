@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.injector.AbstractMethod;
 import com.baomidou.mybatisplus.core.injector.DefaultSqlInjector;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
 import com.baomidou.mybatisplus.enhance.injector.methods.*;
+import com.baomidou.mybatisplus.enhance.util.TableFieldHelper;
 import org.apache.ibatis.session.Configuration;
 
 import java.util.List;
@@ -34,6 +35,9 @@ public class EnhanceSqlInjector extends DefaultSqlInjector {
             methodList.add(new SelectIgnoreDecryptById());
             // 根据ID集合，批量查询数据，不解密
             methodList.add(new SelectIgnoreDecryptBatchIds());
+            if (TableFieldHelper.getTableSignatureStoreFieldInfo(tableInfo).isPresent()) {
+                methodList.add(new UpdateSignatureById());
+            }
         } else {
             logger.warn(String.format("%s ,Not found @TableId annotation, Cannot use Mybatis-Plus 'xxById' Method.",
                     tableInfo.getEntityType()));

@@ -13,6 +13,9 @@ import java.util.Objects;
  */
 public class I18nContext {
 
+    /**
+     * 当前执行链绑定的语言区域。
+     */
     private static final TransmittableThreadLocal<Locale> CURRENT_LOCALE = new TransmittableThreadLocal<>();
 
     /**
@@ -24,6 +27,8 @@ public class I18nContext {
 
     /**
      * 设置当前 Locale，传入空值时清理上下文。
+     *
+     * @param locale 当前语言区域；为 {@code null} 时清理上下文
      */
     public void setLocale(Locale locale) {
         if (Objects.isNull(locale)) {
@@ -57,15 +62,35 @@ public class I18nContext {
      */
     public static final class Scope implements AutoCloseable {
 
+        /**
+         * 负责恢复语言区域的上下文实例。
+         */
         private final I18nContext context;
+
+        /**
+         * 打开作用域前绑定的语言区域。
+         */
         private final Locale previous;
+
+        /**
+         * 是否已关闭，用于保证恢复操作幂等。
+         */
         private boolean closed;
 
+        /**
+         * 创建语言区域作用域恢复句柄。
+         *
+         * @param context  语言区域上下文
+         * @param previous 进入作用域前的语言区域
+         */
         private Scope(I18nContext context, Locale previous) {
             this.context = context;
             this.previous = previous;
         }
 
+        /**
+         * 关闭当前作用域并恢复进入前的语言区域。
+         */
         @Override
         public void close() {
             if (closed) {

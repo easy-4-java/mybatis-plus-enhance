@@ -13,9 +13,24 @@ import java.util.Objects;
 @Value
 public class SqlObservation {
 
+    /**
+     * Mapper 方法对应的 MappedStatement 全限定标识。
+     */
     String mappedStatementId;
+
+    /**
+     * MyBatis 生成的 SQL 文本；无法取得时为 {@code null}。
+     */
     String sql;
+
+    /**
+     * Executor 实际执行耗时，单位纳秒。
+     */
     long elapsedNanos;
+
+    /**
+     * SQL 执行或结果增强阶段的失败原因；成功时为 {@code null}。
+     */
     Throwable failure;
 
     /**

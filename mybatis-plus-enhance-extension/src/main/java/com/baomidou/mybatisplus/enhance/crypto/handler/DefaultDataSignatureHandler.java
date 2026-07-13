@@ -42,6 +42,9 @@ public class DefaultDataSignatureHandler implements DataSignatureHandler {
     @Getter
     private final EncryptedFieldHandler encryptedFieldHandler;
 
+    /**
+     * 负责从实体、Map 或 Wrapper 参数读写签名值的策略。
+     */
     @Getter
     private final DataSignatureReadWriteProvider signatureReadWriteProvider;
 
@@ -133,49 +136,9 @@ public class DefaultDataSignatureHandler implements DataSignatureHandler {
             return Boolean.FALSE;
         }
 
-        // 3、获取自定义Entity类联合签名的字段信息列表（排序后）
-        TableInfo tableInfo = TableInfoHelper.getTableInfo(entityClass);
-        List<TableFieldInfo> signatureFieldInfos = TableFieldHelper.getSortedSignatureFieldInfos(tableInfo);
-        if (CollectionUtils.isEmpty(signatureFieldInfos)) {
-            return Boolean.FALSE;
-        }
-
-        // 4、获取 SQL 更新字段内容，例如：name='1', age=2
-        String sqlSet = updateWrapper.getSqlSet();
-        // 4.1、解析SQL更新字段内容，例如：name='1', age=2，解析为Map 对象
-        String[] sqlSetArr = StringUtils.split(sqlSet, Constants.COMMA);
-        Map<String, String> propMap = Arrays.stream(sqlSetArr).map(el -> el.split(Constants.EQUALS)).collect(Collectors.toMap(el -> el[0], el -> el[1]));
-
-        // 5、遍历字段，对字段进行签名和签名处理
-        StringJoiner hmacJoiner = new StringJoiner(Constants.PIPE);
-        for (TableFieldInfo fieldInfo : signatureFieldInfos) {
-            // 5.1、获取字段上的@TableSignatureField注解
-            TableSignatureField signatureField = AnnotationUtils.findFirstAnnotation(TableSignatureField.class, fieldInfo.getField());
-            // 5.2、如果Entity类被@TableSignature注解，并且 unionAll = true；或者字段被@TableSignatureField注解，并且 stored = false，则进行签名处理
-            if (tableSignature.unionAll() || (Objects.nonNull(signatureField) && !signatureField.stored())) {
-                // 5.2.1、获取字段的原始值
-                String el = MapUtil.getStr(propMap, fieldInfo.getProperty());
-                // 5.2.2、进行参数正则匹配，如果匹配成功，则对参数进行签名处理
-                Matcher matcher = PARAM_PAIRS_RE.matcher(el);
-                if (matcher.matches()) {
-                    // 5.2.2.1、获取参数变量名
-                    String valueKey = matcher.group(1);
-                    // 5.2.2.2、获取参数变量值
-                    Object fieldValue = updateWrapper.getParamNameValuePairs().get(valueKey);
-                    // 5.2.2.3、如果签名字段需要进行HMAC签名，则将原始值加入到HMAC签名列表中
-                    hmacJoiner.add(Objects.toString(fieldValue, Constants.EMPTY));
-                }
-            }
-        }
-
-        // 6、如果实体类需要进行单表数据存储完整性验证，则对数据表进行签名处理
-        if (hmacJoiner.length() > 0) {
-            // 6.1、对数据进行签名处理
-            String hmacValue = getEncryptedFieldHandler().hmac(hmacJoiner.toString());
-            // 6.2、调用签名读写提供者，将签名值写入到实体类中或外部存储
-            return getSignatureReadWriteProvider().writeSignature(propMap, tableInfo, updateWrapper, hmacValue);
-        }
-        return Boolean.FALSE;
+        throw ExceptionUtils.mpe("签名表【%s】不允许通过 UpdateWrapper 直接计算整行签名；"
+                        + "请使用 DEFERRED_RESIGN 策略读取完整行后补签",
+                entityClass.getName());
     }
 
     /**
@@ -215,7 +178,9 @@ public class DefaultDataSignatureHandler implements DataSignatureHandler {
                 Object fieldValue;
                 if (rawObject instanceof Map) {
                     Map<?, ?> rawMap = (Map<?, ?>) rawObject;
-                    fieldValue = MapUtil.getStr(rawMap, fieldInfo.getProperty());
+                    fieldValue = rawMap.containsKey(fieldInfo.getProperty())
+                            ? rawMap.get(fieldInfo.getProperty())
+                            : rawMap.get(fieldInfo.getColumn());
                 } else {
                     fieldValue = ReflectUtil.getFieldValue(rawObject, fieldInfo.getField());
                 }
@@ -229,6 +194,18 @@ public class DefaultDataSignatureHandler implements DataSignatureHandler {
 
     }
 
+    /**
+     * 读取已持久化签名，并与当前字段组合计算出的 HMAC 进行比较。
+     *
+     * <p>缺少签名、签名不一致时均抛出 MyBatis-Plus 异常；输入不完整时直接跳过，
+     * 便于子类复用该模板步骤并定制签名原文的收集过程。</p>
+     *
+     * @param tableInfo          实体对应的 MyBatis-Plus 表元数据
+     * @param signatureFieldInfos 参与签名且已按顺序排列的字段元数据
+     * @param hmacJoiner         已按签名顺序拼接的原文
+     * @param rawObject          待读取已存签名的实体或 Map
+     * @param <T>                保留给子类扩展的结果类型参数
+     */
     protected <T> void doSignatureVerification(TableInfo tableInfo, List<TableFieldInfo> signatureFieldInfos, StringJoiner hmacJoiner, Object rawObject) {
         // 1、如果实体类需要进行单表数据存储完整性验证，则对数据表进行签名处理
         if (Objects.isNull(rawObject) || CollectionUtils.isEmpty(signatureFieldInfos) || Objects.isNull(hmacJoiner) || hmacJoiner.length() == 0) {
@@ -239,9 +216,9 @@ public class DefaultDataSignatureHandler implements DataSignatureHandler {
         // 6.2、如果签名结果存在，则进行签名验证
         if (signatureValue.isPresent()) {
             // 6.2.3、对联合签名字符串进行签名处理，获取签名值
-            String hmacValue = getEncryptedFieldHandler().hmac(hmacJoiner.toString());
-            // 6.2.4、对比签名值，如果不一致，则抛出异常
-            ExceptionUtils.throwMpe(!Objects.equals(hmacValue, signatureValue.get()),
+            // 6.2.4、按签名携带的 keyId 验证，支持密钥轮换后的历史数据
+            ExceptionUtils.throwMpe(!getEncryptedFieldHandler().verifyHmac(
+                            hmacJoiner.toString(), Objects.toString(signatureValue.get(), null)),
                     "表【%s】的数据列【%s】,数据签名不匹配，数据存储完整性验证不通过，请检查数据完整性",
                     tableInfo.getTableName(),
                     signatureFieldInfos.stream().map(TableFieldInfo::getColumn).reduce((a, b) -> a + Constants.COMMA + b).orElse(Constants.EMPTY));

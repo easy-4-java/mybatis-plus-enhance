@@ -24,11 +24,25 @@ import java.util.concurrent.ConcurrentMap;
 @Slf4j
 public class DataScopeAnnotationHandler implements MultiDataPermissionHandler {
 
+    /**
+     * MyBatis-Plus 分页 COUNT 语句使用的大写方法名后缀。
+     */
     private static final String COUNT_SUFFIX_UPPER = "_COUNT";
+
+    /**
+     * 兼容部分分页实现使用的小写 COUNT 方法名后缀。
+     */
     private static final String COUNT_SUFFIX_LOWER = "_count";
 
+    /**
+     * 根据业务权限上下文生成 JSqlParser 条件的扩展端口。
+     */
     @Getter
     private final DataScopeExpressionProvider dataScopeExpressionProvider;
+
+    /**
+     * 按 MappedStatement ID 缓存方法级或 Mapper 级数据权限声明。
+     */
     private final ConcurrentMap<String, Optional<DataScopePlus>> annotationCache = new ConcurrentHashMap<>();
 
     /**
@@ -60,6 +74,12 @@ public class DataScopeAnnotationHandler implements MultiDataPermissionHandler {
                 table, where, mappedStatementId, resolved.get());
     }
 
+    /**
+     * 解析语句对应的 {@link DataScopePlus}，方法声明优先于 Mapper 类型声明。
+     *
+     * @param mappedStatementId Mapper 方法的全限定语句 ID
+     * @return 已解析的声明；语句无声明或无法解析 Mapper 类型时返回空
+     */
     private Optional<DataScopePlus> resolveAnnotation(String mappedStatementId) {
         int methodSeparator = mappedStatementId.lastIndexOf('.');
         if (methodSeparator <= 0 || methodSeparator == mappedStatementId.length() - 1) {
@@ -82,6 +102,13 @@ public class DataScopeAnnotationHandler implements MultiDataPermissionHandler {
         }
     }
 
+    /**
+     * 在 Mapper 自身声明的方法中查找数据权限注解。
+     *
+     * @param mapperClass Mapper 类型
+     * @param methodName  已移除分页后缀的方法名
+     * @return 方法级注解；不存在时返回 {@code null}
+     */
     private DataScopePlus findMethodAnnotation(Class<?> mapperClass, String methodName) {
         for (Method method : mapperClass.getDeclaredMethods()) {
             if (!method.getName().equals(methodName)) {
@@ -95,6 +122,12 @@ public class DataScopeAnnotationHandler implements MultiDataPermissionHandler {
         return null;
     }
 
+    /**
+     * 将分页插件生成的 COUNT 语句名还原为原始 Mapper 方法名。
+     *
+     * @param methodName MappedStatement 中的方法名
+     * @return 去除 COUNT 后缀后的方法名
+     */
     private String normalizeMethodName(String methodName) {
         if (methodName.endsWith(COUNT_SUFFIX_UPPER) || methodName.endsWith(COUNT_SUFFIX_LOWER)) {
             return methodName.substring(0, methodName.length() - COUNT_SUFFIX_UPPER.length());

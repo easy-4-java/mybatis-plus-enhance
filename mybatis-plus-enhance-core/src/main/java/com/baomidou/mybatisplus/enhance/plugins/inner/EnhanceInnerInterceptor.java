@@ -22,6 +22,18 @@ import java.util.List;
 public interface EnhanceInnerInterceptor extends InnerInterceptor {
 
     /**
+     * 声明增强在统一拦截器链中的阶段。
+     *
+     * <p>框架内置增强必须返回明确阶段；第三方增强默认不参与强制排序，以保持与官方
+     * {@link InnerInterceptor} 的兼容性。</p>
+     *
+     * @return 增强阶段
+     */
+    default EnhancePhase phase() {
+        return EnhancePhase.UNSPECIFIED;
+    }
+
+    /**
      * {@link Executor#query(MappedStatement, Object, RowBounds, ResultHandler, CacheKey, BoundSql)}
      * 成功完成后的结果增强处理。
      *
@@ -34,8 +46,10 @@ public interface EnhanceInnerInterceptor extends InnerInterceptor {
      * @param rtList        查询结果列表
      * @throws SQLException 查询结果增强失败时抛出
      */
-    default void afterQuery(Executor executor, MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler<?> resultHandler, BoundSql boundSql, List<Object> rtList) throws SQLException {
-        // do nothing
+    default List<Object> afterQuery(Executor executor, MappedStatement ms, Object parameter, RowBounds rowBounds,
+                                    ResultHandler<?> resultHandler, BoundSql boundSql,
+                                    List<Object> rtList) throws SQLException {
+        return rtList;
     }
 
     /**

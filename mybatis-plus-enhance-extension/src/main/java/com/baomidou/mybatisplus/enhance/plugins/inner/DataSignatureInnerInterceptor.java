@@ -2,7 +2,14 @@ package com.baomidou.mybatisplus.enhance.plugins.inner;
 
 import com.baomidou.mybatisplus.core.conditions.AbstractWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.Update;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
+import com.baomidou.mybatisplus.core.toolkit.AnnotationUtils;
+import com.baomidou.mybatisplus.core.toolkit.ExceptionUtils;
+import com.baomidou.mybatisplus.core.toolkit.reflect.GenericTypeUtils;
+import com.baomidou.mybatisplus.enhance.context.SignatureUpdateContext;
+import com.baomidou.mybatisplus.enhance.context.SignatureVerificationContext;
+import com.baomidou.mybatisplus.enhance.crypto.enums.SignatureUpdateStrategy;
 import com.baomidou.mybatisplus.enhance.crypto.handler.DataSignatureHandler;
 import com.baomidou.mybatisplus.enhance.util.EnhanceConstants;
 import com.baomidou.mybatisplus.enhance.util.ParameterUtils;
@@ -12,12 +19,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
+import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.type.SimpleTypeRegistry;
 
 import java.sql.SQLException;
 import java.util.*;
+import org.apache.mybatis.enhance.annotation.crypto.TableSignature;
 
 /**
  * 表级数据签名与验签拦截器。
@@ -29,18 +38,23 @@ import java.util.*;
 @Slf4j
 public class DataSignatureInnerInterceptor extends JsqlParserSupport implements EnhanceInnerInterceptor {
 
+    @Override
+    public EnhancePhase phase() {
+        return EnhancePhase.DATA_SIGNATURE;
+    }
+
     /**
-     * 数据签名和验签 Handler
+     * 对写入参数生成签名并对查询结果执行完整性验证的处理器。
      */
     @Getter
     private final DataSignatureHandler dataSignatureHandler;
     /**
-     * 是否开启数据签名
+     * 是否在 INSERT、UPDATE 执行前生成数据签名。
      */
     @Getter
     private final boolean signSwitch;
     /**
-     * 是否开启数据签名验证
+     * 是否在查询结果映射完成后执行签名验证。
      */
     @Getter
     private final boolean signVerify;
@@ -124,6 +138,17 @@ public class DataSignatureInnerInterceptor extends JsqlParserSupport implements 
         if (ParameterUtils.isSwitchOff(signSwitch, parameterObject)) {
             return;
         }
+        SignatureUpdateStrategy updateStrategy = SignatureUpdateContext.current();
+        if (mappedStatement.getSqlCommandType() == SqlCommandType.UPDATE) {
+            if (updateStrategy == SignatureUpdateStrategy.DEFERRED_RESIGN
+                    || updateStrategy == SignatureUpdateStrategy.SIGNATURE_ONLY) {
+                return;
+            }
+            if (updateStrategy == SignatureUpdateStrategy.REJECT_PARTIAL) {
+                rejectSignedPartialUpdate(mappedStatement, parameterObject);
+                return;
+            }
+        }
         // 2、通过MybatisPlus自带API（save、insert等）新增数据库时
         if (!(parameterObject instanceof Map)) {
             // 对参数进行签名处理
@@ -149,9 +174,56 @@ public class DataSignatureInnerInterceptor extends JsqlParserSupport implements 
         if (paramMap.containsKey(Constants.WRAPPER) && null != (param = paramMap.get(Constants.WRAPPER))) {
             // 6.1、判断是否是UpdateWrapper、LambdaUpdateWrapper类型
             if (param instanceof Update && param instanceof AbstractWrapper) {
-                Class<?> entityClass = mappedStatement.getParameterMap().getType();
+                Class<?> entityClass = resolveEntityClass(mappedStatement, (AbstractWrapper<?, ?, ?>) param);
                 getDataSignatureHandler().doWrapperSignature(entityClass, (AbstractWrapper<?, ?, ?>) param);
             }
+        }
+    }
+
+    /**
+     * 默认拒绝签名表的部分更新，防止使用不完整参数生成错误整行签名。
+     */
+    private void rejectSignedPartialUpdate(MappedStatement mappedStatement, Object parameterObject) {
+        Class<?> entityClass = resolveEntityClass(mappedStatement, parameterObject);
+        if (Objects.nonNull(entityClass)
+                && Objects.nonNull(AnnotationUtils.findFirstAnnotation(TableSignature.class, entityClass))) {
+            throw ExceptionUtils.mpe("签名表【%s】的 UPDATE 必须显式使用 FULL_ROW 或 DEFERRED_RESIGN 策略",
+                    entityClass.getName());
+        }
+    }
+
+    /**
+     * 从实体、Wrapper 或 Mapper 泛型解析当前语句对应的实体类型。
+     */
+    private Class<?> resolveEntityClass(MappedStatement mappedStatement, Object parameterObject) {
+        Object candidate = parameterObject;
+        if (parameterObject instanceof Map) {
+            Map<?, ?> parameterMap = (Map<?, ?>) parameterObject;
+            if (parameterMap.containsKey(Constants.ENTITY)) {
+                candidate = parameterMap.get(Constants.ENTITY);
+            } else if (parameterMap.containsKey(Constants.WRAPPER)) {
+                candidate = parameterMap.get(Constants.WRAPPER);
+            }
+        }
+        if (candidate instanceof AbstractWrapper) {
+            Class<?> wrapperType = ((AbstractWrapper<?, ?, ?>) candidate).getEntityClass();
+            if (Objects.nonNull(wrapperType)) {
+                return wrapperType;
+            }
+        } else if (Objects.nonNull(candidate) && !(candidate instanceof Map)) {
+            return candidate.getClass();
+        }
+        String statementId = mappedStatement.getId();
+        int separator = statementId.lastIndexOf('.');
+        if (separator <= 0) {
+            return null;
+        }
+        try {
+            Class<?> mapperClass = Class.forName(statementId.substring(0, separator));
+            Class<?>[] typeArguments = GenericTypeUtils.resolveTypeArguments(mapperClass, BaseMapper.class);
+            return Objects.isNull(typeArguments) || typeArguments.length == 0 ? null : typeArguments[0];
+        } catch (ClassNotFoundException exception) {
+            throw ExceptionUtils.mpe("无法解析 Mapper 实体类型: %s", exception, statementId);
         }
     }
 
@@ -161,10 +233,12 @@ public class DataSignatureInnerInterceptor extends JsqlParserSupport implements 
      * @param rtList MyBatis 已映射的结果列表
      */
     @Override
-    public void afterQuery(Executor executor, MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler<?> resultHandler, BoundSql boundSql, List<Object> rtList) throws SQLException {
+    public List<Object> afterQuery(Executor executor, MappedStatement ms, Object parameter, RowBounds rowBounds,
+                                   ResultHandler<?> resultHandler, BoundSql boundSql,
+                                   List<Object> rtList) throws SQLException {
         // 1、如果参数为空，或者参数元素为0，或全局未启用 则直接返回
-        if (ParameterUtils.isSwitchOff(signVerify, rtList)) {
-            return;
+        if (SignatureVerificationContext.isIgnored() || ParameterUtils.isSwitchOff(signVerify, rtList)) {
+            return rtList;
         }
         for (Object rawObject : rtList) {
             if (Objects.isNull(rawObject) || SimpleTypeRegistry.isSimpleType(rawObject.getClass())) {
@@ -172,6 +246,7 @@ public class DataSignatureInnerInterceptor extends JsqlParserSupport implements 
             }
             getDataSignatureHandler().doSignatureVerification(rawObject, rawObject.getClass());
         }
+        return rtList;
     }
 
 }
