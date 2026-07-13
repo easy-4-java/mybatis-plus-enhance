@@ -189,6 +189,20 @@ EncryptedFieldHandler handler = new DefaultEncryptedFieldHandler(
 - 默认处理器不记录明文、完整密文、密钥、IV 或 HMAC；自定义处理器也必须遵守相同约束；
 - 密文和 HMAC 携带 `keyId`；轮换时由 `CryptoKeyProvider` 同时提供当前密钥与受控历史密钥。
 
+### 解密结果拷贝与缓存安全
+
+`DataDecryptionInnerInterceptor` 默认在解密前**浅拷贝**每条查询结果，防止就地修改污染 MyBatis 一级/二级缓存。
+如果应用已禁用 MyBatis 本地缓存（或使用 Redis 等外部缓存），可通过 `ResultObjectCopier.noCopy()` 跳过拷贝，
+直接就地解密以节省内存：
+
+```java
+interceptor.addInnerInterceptor(
+        new DataDecryptionInnerInterceptor(encryptionHandler, true, ResultObjectCopier.noCopy()));
+```
+
+使用 `noCopy()` 时需自行保证：同一 SqlSession 中不会混合使用普通查询与 `selectIgnoreDecryptById` 等跳过解密查询，
+否则缓存中的密文会被解密覆盖。
+
 ## 表级签名与验签
 
 表签名用于检测关键业务字段是否被绕过应用直接篡改，它不是访问控制或数据加密的替代品。

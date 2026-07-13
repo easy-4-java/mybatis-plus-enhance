@@ -99,6 +99,12 @@ public class DataDecryptionInnerInterceptor implements EnhanceInnerInterceptor {
     /**
      * 使用自定义结果复制策略创建查询结果解密拦截器。
      *
+     * <p>若应用已禁用 MyBatis 本地缓存，可通过 {@code ResultObjectCopier.noCopy()} 跳过
+     * 对象拷贝，直接就地解密以节省内存：</p>
+     * <pre>{@code
+     * new DataDecryptionInnerInterceptor(handler, true, ResultObjectCopier.noCopy());
+     * }</pre>
+     *
      * @param dataEncryptionHandler 数据加密处理器
      * @param decryptSwitch         是否启用解密
      * @param resultObjectCopier    查询结果复制策略
