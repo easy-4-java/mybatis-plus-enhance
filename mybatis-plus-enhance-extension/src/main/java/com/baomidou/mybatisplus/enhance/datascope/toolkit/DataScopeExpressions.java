@@ -22,6 +22,9 @@ import java.util.stream.Collectors;
  */
 public final class DataScopeExpressions {
 
+    /**
+     * 工具类不允许实例化。
+     */
     private DataScopeExpressions() {
     }
 
@@ -70,6 +73,10 @@ public final class DataScopeExpressions {
 
     /**
      * 构造 AND 组合条件。
+     *
+     * @param left  左侧条件表达式
+     * @param right 右侧条件表达式
+     * @return 使用 AND 连接的组合表达式
      */
     public static Expression and(Expression left, Expression right) {
         return new AndExpression(left, right);
@@ -77,11 +84,24 @@ public final class DataScopeExpressions {
 
     /**
      * 构造 OR 组合条件。
+     *
+     * @param left  左侧条件表达式
+     * @param right 右侧条件表达式
+     * @return 使用 OR 连接的组合表达式
      */
     public static Expression or(Expression left, Expression right) {
         return new OrExpression(left, right);
     }
 
+    /**
+     * 将 Java 常量转换为 JSqlParser 字面量表达式。
+     *
+     * <p>整数族映射为 {@link LongValue}，其他数值映射为 {@link DoubleValue}，
+     * 其余对象按字符串处理，空值映射为 {@link NullValue}。</p>
+     *
+     * @param value Java 常量值
+     * @return 对应的 SQL 字面量表达式
+     */
     private static Expression literal(Object value) {
         if (Objects.isNull(value)) {
             return new NullValue();

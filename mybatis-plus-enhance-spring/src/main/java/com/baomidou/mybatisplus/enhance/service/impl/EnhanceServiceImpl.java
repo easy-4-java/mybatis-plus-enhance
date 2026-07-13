@@ -9,6 +9,9 @@ import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.enhance.crypto.handler.DataSignatureHandler;
+import com.baomidou.mybatisplus.enhance.context.SignatureUpdateContext;
+import com.baomidou.mybatisplus.enhance.context.SignatureVerificationContext;
+import com.baomidou.mybatisplus.enhance.crypto.enums.SignatureUpdateStrategy;
 import com.baomidou.mybatisplus.enhance.mapper.EnhanceBaseMapper;
 import com.baomidou.mybatisplus.enhance.service.IEnhanceService;
 import com.baomidou.mybatisplus.enhance.util.TableFieldHelper;
@@ -20,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.function.Function;
 
 /**
  * {@link IEnhanceService} 的抽象基础实现。
@@ -35,11 +37,16 @@ import java.util.function.Function;
 public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> extends ServiceImpl<M, T> implements IEnhanceService<T> {
 
     /**
-     * 数据签名和验签 Handler
+     * 为 Service 写入、补签和查询验签提供统一能力的处理器。
      */
     @Getter
     protected final DataSignatureHandler dataSignatureHandler;
 
+    /**
+     * 创建具备表签名与验签能力的 Service 基础实现。
+     *
+     * @param dataSignatureHandler 数据签名与验签处理器
+     */
     public EnhanceServiceImpl(DataSignatureHandler dataSignatureHandler) {
         this.dataSignatureHandler = dataSignatureHandler;
     }
@@ -104,17 +111,16 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
     public boolean saveBatchSigned(Collection<T> entityList, int batchSize) {
         String sqlStatement = getSqlStatement(SqlMethod.INSERT_ONE);
         Set<Serializable> idSet = new HashSet<>(entityList.size());
-        try {
-            return executeBatch(entityList, batchSize, (sqlSession, entity) -> {
-                // 保存数据
-                sqlSession.insert(sqlStatement, entity);
-                // 获取主键值
-                idSet.add(TableFieldHelper.getKeyValue(entity));
-            });
-        } finally {
-            // 批量签名
+        boolean result = executeBatch(entityList, batchSize, (sqlSession, entity) -> {
+            // 保存数据
+            sqlSession.insert(sqlStatement, entity);
+            // 插入执行后读取数据库生成的主键
+            idSet.add(TableFieldHelper.getKeyValue(entity));
+        });
+        if (result) {
             this.doSignatureByBatchIds(idSet);
         }
+        return result;
     }
 
     /**
@@ -132,8 +138,10 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
         String keyProperty = tableInfo.getKeyProperty();
         Assert.notEmpty(keyProperty, "error: can not execute. because can not find column for id from entity!");
         Set<Serializable> idSet = new HashSet<>(entityList.size());
-        try {
-            return SqlHelper.saveOrUpdateBatch(getSqlSessionFactory(), this.getMapperClass(), this.log, entityList, batchSize, (sqlSession, entity) -> {
+        boolean result;
+        try (SignatureUpdateContext.Scope ignored = SignatureUpdateContext.open(
+                SignatureUpdateStrategy.DEFERRED_RESIGN)) {
+            result = SqlHelper.saveOrUpdateBatch(getSqlSessionFactory(), this.getMapperClass(), this.log, entityList, batchSize, (sqlSession, entity) -> {
                 Object idVal = tableInfo.getPropertyValue(entity, keyProperty);
                 idSet.add((Serializable) idVal);
                 return StringUtils.checkValNull(idVal)
@@ -145,10 +153,11 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
                 Object idVal = tableInfo.getPropertyValue(entity, keyProperty);
                 idSet.add((Serializable) idVal);
             });
-        } finally {
-            // 批量签名
+        }
+        if (result) {
             this.doSignatureByBatchIds(idSet);
         }
+        return result;
     }
 
     /**
@@ -166,10 +175,11 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
         String keyProperty = tableInfo.getKeyProperty();
         Assert.notEmpty(keyProperty, "error: can not execute. because can not find column for id from entity!");
         Set<Serializable> idSet = new HashSet<>(entityList.size());
-        try {
+        boolean result;
+        try (SignatureUpdateContext.Scope ignored = SignatureUpdateContext.open(
+                SignatureUpdateStrategy.DEFERRED_RESIGN)) {
             String sqlStatement = getSqlStatement(SqlMethod.UPDATE_BY_ID);
-            return executeBatch(entityList, batchSize, (sqlSession, entity) -> {
-                doEntitySignature(entity);
+            result = executeBatch(entityList, batchSize, (sqlSession, entity) -> {
                 MapperMethod.ParamMap<T> param = new MapperMethod.ParamMap<>();
                 param.put(Constants.ENTITY, entity);
                 sqlSession.update(sqlStatement, param);
@@ -177,10 +187,11 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
                 Object idVal = tableInfo.getPropertyValue(entity, keyProperty);
                 idSet.add((Serializable) idVal);
             });
-        } finally {
-            // 批量签名
+        }
+        if (result) {
             this.doSignatureByBatchIds(idSet);
         }
+        return result;
     }
 
     /**
@@ -192,7 +203,11 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean saveOrUpdateSigned(T entity) {
-        boolean result = getBaseMapper().insertOrUpdate(entity);
+        boolean result;
+        try (SignatureUpdateContext.Scope ignored = SignatureUpdateContext.open(
+                SignatureUpdateStrategy.DEFERRED_RESIGN)) {
+            result = getBaseMapper().insertOrUpdate(entity);
+        }
         if (result) {
             this.doSignatureById(TableFieldHelper.getKeyValue(entity));
         }
@@ -251,22 +266,9 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
         List<Map<String, Object>> rtList = getBaseMapper().selectMaps(queryWrapper);
         // 2、验证签名
         if (CollectionUtils.isNotEmpty(rtList)) {
-            rtList.forEach(rowMap -> this.doSignatureVerification(rowMap, queryWrapper.getEntity().getClass()));
+            rtList.forEach(rowMap -> this.doSignatureVerification(rowMap, getSignedEntityClass()));
         }
         return SqlHelper.getObject(log, rtList);
-    }
-
-    /**
-     * 查询单个对象值，并使用转换函数生成目标类型。
-     *
-     * @param queryWrapper 查询条件
-     * @param mapper       结果转换函数
-     * @param <V>          目标类型
-     * @return 转换后的单值结果
-     */
-    @Override
-    public <V> V getSignedObj(Wrapper<T> queryWrapper, Function<? super Object, V> mapper) {
-        return SqlHelper.getObject(log, listSignedObjs(queryWrapper, mapper));
     }
 
     /**
@@ -277,15 +279,21 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void doSignatureById(Serializable id) {
-        // 1、根据 ID 查询原始数据
-        T entity = getBaseMapper().selectIgnoreDecryptById(id);
-        // 2、如果原始数据不为空，则对原始数据进行签名
-        if (Objects.nonNull(entity)) {
-            // 2.1、对原始数据进行签名
-            boolean doUpdate = this.doEntitySignature(entity);
-            // 2.2、如果 doUpdate = true, 则更新数据
-            if (doUpdate) {
-                this.updateById(entity);
+        try (SignatureVerificationContext.Scope ignoredVerification =
+                     SignatureVerificationContext.openIgnored()) {
+            // 1、根据 ID 查询原始数据
+            T entity = getBaseMapper().selectIgnoreDecryptById(id);
+            // 2、如果原始数据不为空，则对原始数据进行签名
+            if (Objects.nonNull(entity)) {
+                // 2.1、对原始数据进行签名
+                boolean doUpdate = this.doEntitySignature(entity);
+                // 2.2、如果 doUpdate = true, 则更新数据
+                if (doUpdate) {
+                    try (SignatureUpdateContext.Scope ignoredUpdate = SignatureUpdateContext.open(
+                            SignatureUpdateStrategy.SIGNATURE_ONLY)) {
+                        getEnhanceMapper().updateSignatureById(entity);
+                    }
+                }
             }
         }
     }
@@ -298,10 +306,10 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void doSignatureByBatchIds(Collection<? extends Serializable> idList) {
-        // 1、根据 ID 批量查询原始数据
-        List<T> rtList = getEnhanceMapper().selectIgnoreDecryptBatchIds(idList);
-        // 2、批量对原始数据进行签名
-        this.doSignatureByList(rtList, Constants.DEFAULT_BATCH_SIZE);
+        try (SignatureVerificationContext.Scope ignored = SignatureVerificationContext.openIgnored()) {
+            List<T> rtList = getEnhanceMapper().selectIgnoreDecryptBatchIds(idList);
+            this.doSignatureByList(rtList, Constants.DEFAULT_BATCH_SIZE);
+        }
     }
 
     /**
@@ -312,10 +320,10 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void doSignatureByMap(Map<String, Object> columnMap) {
-        // 1、根据 columnMap 查询原始数据
-        List<T> rtList = getBaseMapper().selectIgnoreDecryptByMap(columnMap);
-        // 2、批量对原始数据进行签名
-        this.doSignatureByList(rtList, Constants.DEFAULT_BATCH_SIZE);
+        try (SignatureVerificationContext.Scope ignored = SignatureVerificationContext.openIgnored()) {
+            List<T> rtList = getBaseMapper().selectIgnoreDecryptByMap(columnMap);
+            this.doSignatureByList(rtList, Constants.DEFAULT_BATCH_SIZE);
+        }
     }
 
     /**
@@ -327,10 +335,10 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
     @Transactional(rollbackFor = Exception.class)
     public void doSignatureByWrappers(List<Wrapper<T>> queryWrappers) {
         for (Wrapper<T> queryWrapper : queryWrappers) {
-            // 1、根据 Wrapper 条件查询原始数据
-            List<T> rtList = getBaseMapper().selectIgnoreDecryptList(queryWrapper);
-            // 2、批量对原始数据进行签名
-            this.doSignatureByList(rtList, Constants.DEFAULT_BATCH_SIZE);
+            try (SignatureVerificationContext.Scope ignored = SignatureVerificationContext.openIgnored()) {
+                List<T> rtList = getBaseMapper().selectIgnoreDecryptList(queryWrapper);
+                this.doSignatureByList(rtList, Constants.DEFAULT_BATCH_SIZE);
+            }
         }
     }
 
@@ -346,18 +354,24 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
         if (CollectionUtils.isEmpty(entityList)) {
             return;
         }
+        List<T> toUpdate = new ArrayList<>(entityList.size());
         // 2、对原始数据进行签名
         for (T entity : entityList) {
             // 2.1、对原始数据进行签名
             boolean doUpdate = this.doEntitySignature(entity);
             // 2.2、如果 doUpdate = true, 则更新数据
-            if (!doUpdate) {
-                entityList.removeIf(rowObject -> TableFieldHelper.getKeyValue(entity).equals(TableFieldHelper.getKeyValue(rowObject)));
+            if (doUpdate) {
+                toUpdate.add(entity);
             }
         }
-        // 3、批量更新数据
-        if (CollectionUtils.isNotEmpty(entityList)) {
-            this.updateBatchById(entityList, batchSize);
+        // 3、仅更新签名存储列，不把原始密文再次交给加密拦截器
+        if (CollectionUtils.isNotEmpty(toUpdate)) {
+            try (SignatureUpdateContext.Scope ignored = SignatureUpdateContext.open(
+                    SignatureUpdateStrategy.SIGNATURE_ONLY)) {
+                for (T entity : toUpdate) {
+                    getEnhanceMapper().updateSignatureById(entity);
+                }
+            }
         }
     }
 

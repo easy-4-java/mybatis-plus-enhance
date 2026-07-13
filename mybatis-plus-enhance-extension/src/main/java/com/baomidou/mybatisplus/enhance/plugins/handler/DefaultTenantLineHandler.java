@@ -34,10 +34,24 @@ public class DefaultTenantLineHandler implements TenantLineHandler {
     /** 默认租户字段名。 */
     public static final String DEFAULT_TENANT_COLUMN = "tenant_id";
 
+    /**
+     * 默认不忽略任何业务表的判断策略。
+     */
     private static final Predicate<String> NEVER_IGNORE = tableName -> false;
 
+    /**
+     * 提供当前执行链租户标识的上下文。
+     */
     private final TenantContext context;
+
+    /**
+     * 追加到租户 SQL 条件中的字段名。
+     */
     private final String tenantColumn;
+
+    /**
+     * 判断指定表是否跳过租户条件的策略。
+     */
     private final Predicate<String> ignoredTable;
 
     /**

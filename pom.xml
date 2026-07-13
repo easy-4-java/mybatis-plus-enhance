@@ -117,6 +117,7 @@
         <bcprov.version>1.81</bcprov.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <hutool.version>5.8.40</hutool.version>
+        <h2.version>2.3.232</h2.version>
         <jackson.version>2.18.9</jackson.version>
         <!-- 3.0.x 面向 JDK 21，使用 Jakarta 注解命名空间。 -->
         <jakarta-annotation.version>2.1.1</jakarta-annotation.version>
@@ -300,6 +301,12 @@
             </dependency>
 
             <!-- 统一测试框架版本。 -->
+            <!-- H2：真实 MyBatis/MyBatis-Plus 组合测试的内存数据库。 -->
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${h2.version}</version>
+            </dependency>
             <!-- JUnit 4：现有测试代码的统一执行框架。 -->
             <dependency>
                 <groupId>junit</groupId>

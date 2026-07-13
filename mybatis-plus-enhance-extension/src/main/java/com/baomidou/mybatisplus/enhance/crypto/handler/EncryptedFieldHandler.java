@@ -36,4 +36,19 @@ public interface EncryptedFieldHandler {
      */
     <T> String hmac(T value);
 
+    /**
+     * 使用签名中携带的密钥版本验证 HMAC。
+     *
+     * <p>默认实现兼容简单处理器；支持密钥轮换的实现应解析签名中的 keyId，使用对应历史密钥
+     * 进行常量时间比较。</p>
+     *
+     * @param value     原始值
+     * @param signature 已存储签名
+     * @param <T>       值类型
+     * @return 验证通过时返回 {@code true}
+     */
+    default <T> boolean verifyHmac(T value, String signature) {
+        return java.util.Objects.equals(hmac(value), signature);
+    }
+
 }

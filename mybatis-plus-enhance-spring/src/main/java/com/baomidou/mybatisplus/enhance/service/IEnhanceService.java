@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.enhance.mapper.EnhanceBaseMapper;
+import com.baomidou.mybatisplus.enhance.context.SignatureUpdateContext;
+import com.baomidou.mybatisplus.enhance.crypto.enums.SignatureUpdateStrategy;
 import com.baomidou.mybatisplus.enhance.util.TableFieldHelper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
@@ -13,8 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * 支持表级数据签名与验签的 MyBatis-Plus Service 契约。
@@ -26,6 +26,18 @@ import java.util.stream.Collectors;
  * @param <T> MyBatis-Plus 实体类型
  */
 public interface IEnhanceService<T> extends IService<T> {
+
+    /**
+     * 获取 Signed API 用于解析签名元数据的实体类型。
+     *
+     * <p>该端口避免从 Wrapper 实体或查询投影推断类型。常规 MyBatis-Plus Service 可以复用
+     * 官方实体类型解析，代理或多态 Service 可以显式覆盖。</p>
+     *
+     * @return 当前 Service 管理的实体类型
+     */
+    default Class<T> getSignedEntityClass() {
+        return getEntityClass();
+    }
 
     /**
      * 计算并写回实体的表级签名。
@@ -49,6 +61,7 @@ public interface IEnhanceService<T> extends IService<T> {
      * 插入一条记录（选择字段，策略插入）
      *
      * @param entity 实体对象
+     * @return 插入并完成补签时返回 {@code true}
      */
     @Transactional(rollbackFor = Exception.class)
     default boolean saveSigned(T entity) {
@@ -63,6 +76,7 @@ public interface IEnhanceService<T> extends IService<T> {
      * 插入（批量）
      *
      * @param entityList 实体对象集合
+     * @return 全部实体插入并完成补签时返回 {@code true}
      */
     @Transactional(rollbackFor = Exception.class)
     default boolean saveBatchSigned(Collection<T> entityList) {
@@ -74,6 +88,7 @@ public interface IEnhanceService<T> extends IService<T> {
      *
      * @param entityList 实体对象集合
      * @param batchSize  插入批次数量
+     * @return 全部实体插入并完成补签时返回 {@code true}
      */
     boolean saveBatchSigned(Collection<T> entityList, int batchSize);
 
@@ -81,6 +96,7 @@ public interface IEnhanceService<T> extends IService<T> {
      * 批量修改插入
      *
      * @param entityList 实体对象集合
+     * @return 批量保存或更新并完成补签时返回 {@code true}
      */
     @Transactional(rollbackFor = Exception.class)
     default boolean saveOrUpdateBatchSigned(Collection<T> entityList) {
@@ -92,6 +108,7 @@ public interface IEnhanceService<T> extends IService<T> {
      *
      * @param entityList 实体对象集合
      * @param batchSize  每次的数量
+     * @return 批量保存或更新并完成补签时返回 {@code true}
      */
     boolean saveOrUpdateBatchSigned(Collection<T> entityList, int batchSize);
 
@@ -99,10 +116,15 @@ public interface IEnhanceService<T> extends IService<T> {
      * 根据 ID 选择修改
      *
      * @param entity 实体对象
+     * @return 更新并完成补签时返回 {@code true}
      */
     @Transactional(rollbackFor = Exception.class)
     default boolean updateSignedById(T entity) {
-        boolean result = SqlHelper.retBool(getBaseMapper().updateById(entity));
+        boolean result;
+        try (SignatureUpdateContext.Scope ignored = SignatureUpdateContext.open(
+                SignatureUpdateStrategy.DEFERRED_RESIGN)) {
+            result = SqlHelper.retBool(getBaseMapper().updateById(entity));
+        }
         if (result) {
             this.doSignatureById(TableFieldHelper.getKeyValue(entity));
         }
@@ -113,6 +135,7 @@ public interface IEnhanceService<T> extends IService<T> {
      * 根据ID 批量更新
      *
      * @param entityList 实体对象集合
+     * @return 全部实体更新并完成补签时返回 {@code true}
      */
     @Transactional(rollbackFor = Exception.class)
     default boolean updateBatchSignedById(Collection<T> entityList) {
@@ -124,6 +147,7 @@ public interface IEnhanceService<T> extends IService<T> {
      *
      * @param entityList 实体对象集合
      * @param batchSize  更新批次数量
+     * @return 全部实体更新并完成补签时返回 {@code true}
      */
     boolean updateBatchSignedById(Collection<T> entityList, int batchSize);
 
@@ -131,6 +155,7 @@ public interface IEnhanceService<T> extends IService<T> {
      * TableId 注解存在更新记录，否插入一条记录
      *
      * @param entity 实体对象
+     * @return 保存或更新并完成补签时返回 {@code true}
      */
     boolean saveOrUpdateSigned(T entity);
 
@@ -138,6 +163,7 @@ public interface IEnhanceService<T> extends IService<T> {
      * 根据 ID 查询 签名验证通过的数据
      *
      * @param id 主键ID
+     * @return 验签通过的实体；记录不存在时返回 {@code null}
      */
     default T getSignedById(Serializable id) {
         // 1、调用selectById查询数据
@@ -165,6 +191,7 @@ public interface IEnhanceService<T> extends IService<T> {
      * 查询（根据ID 批量查询）
      *
      * @param idList 主键ID列表
+     * @return 已逐条完成验签的实体列表
      */
     default List<T> listSignedByIds(Collection<? extends Serializable> idList) {
         // 1、调用selectBatchIds查询数据
@@ -186,10 +213,10 @@ public interface IEnhanceService<T> extends IService<T> {
     default void listSignedByIds(Collection<? extends Serializable> idList, ResultHandler<T> resultHandler) {
         // 1、封装结果处理器
         ResultHandler<T> wapperHandler = context -> {
-            // 2、调用结果处理器
-            resultHandler.handleResult(context);
-            // 3、验证签名
+            // 2、验证签名
             this.doSignatureVerification(context.getResultObject(), context.getResultObject().getClass());
+            // 3、调用结果处理器
+            resultHandler.handleResult(context);
         };
         // 4、调用selectBatchIds查询数据
         getBaseMapper().selectBatchIds(idList, wapperHandler);
@@ -199,6 +226,7 @@ public interface IEnhanceService<T> extends IService<T> {
      * 查询（根据 columnMap 条件）
      *
      * @param columnMap 表字段 map 对象
+     * @return 已逐条完成验签的实体列表
      */
     default List<T> listSignedByMap(Map<String, Object> columnMap) {
         // 1、调用selectByMap查询数据
@@ -220,10 +248,10 @@ public interface IEnhanceService<T> extends IService<T> {
     default void listSignedByMap(Map<String, Object> columnMap, ResultHandler<T> resultHandler) {
         // 1、封装结果处理器
         ResultHandler<T> wapperHandler = context -> {
-            // 2、调用结果处理器
-            resultHandler.handleResult(context);
-            // 3、验证签名
+            // 2、验证签名
             this.doSignatureVerification(context.getResultObject(), context.getResultObject().getClass());
+            // 3、调用结果处理器
+            resultHandler.handleResult(context);
         };
         // 4、调用selectByMap查询数据
         getBaseMapper().selectByMap(columnMap, wapperHandler);
@@ -234,6 +262,7 @@ public interface IEnhanceService<T> extends IService<T> {
      * <p>结果集，如果是多个会抛出异常，随机取一条加上限制条件 wrapper.last("LIMIT 1")</p>
      *
      * @param queryWrapper 实体对象封装操作类 {@link com.baomidou.mybatisplus.core.conditions.query.QueryWrapper}
+     * @return 验签通过的单条实体；无结果时返回 {@code null}
      */
     default T getSignedOne(Wrapper<T> queryWrapper) {
         return getSignedOne(queryWrapper, true);
@@ -255,6 +284,7 @@ public interface IEnhanceService<T> extends IService<T> {
      *
      * @param queryWrapper 实体对象封装操作类 {@link com.baomidou.mybatisplus.core.conditions.query.QueryWrapper}
      * @param throwEx      有多个 result 是否抛出异常
+     * @return 验签通过的单条实体；无结果时返回 {@code null}
      */
     T getSignedOne(Wrapper<T> queryWrapper, boolean throwEx);
 
@@ -271,21 +301,15 @@ public interface IEnhanceService<T> extends IService<T> {
      * 根据 Wrapper，查询一条记录
      *
      * @param queryWrapper 实体对象封装操作类 {@link com.baomidou.mybatisplus.core.conditions.query.QueryWrapper}
+     * @return 验签通过的字段 Map；无结果时返回 {@code null}
      */
     Map<String, Object> getSignedMap(Wrapper<T> queryWrapper);
-
-    /**
-     * 根据 Wrapper，查询一条记录
-     *
-     * @param queryWrapper 实体对象封装操作类 {@link com.baomidou.mybatisplus.core.conditions.query.QueryWrapper}
-     * @param mapper       转换函数
-     */
-    <V> V getSignedObj(Wrapper<T> queryWrapper, Function<? super Object, V> mapper);
 
     /**
      * 查询列表
      *
      * @param queryWrapper 实体对象封装操作类 {@link com.baomidou.mybatisplus.core.conditions.query.QueryWrapper}
+     * @return 已逐条完成验签的实体列表
      */
     default List<T> listSigned(Wrapper<T> queryWrapper) {
         // 1、调用selectList查询数据
@@ -307,10 +331,10 @@ public interface IEnhanceService<T> extends IService<T> {
     default void listSigned(Wrapper<T> queryWrapper, ResultHandler<T> resultHandler) {
         // 1、封装结果处理器
         ResultHandler<T> wapperHandler = context -> {
-            // 2、调用结果处理器
-            resultHandler.handleResult(context);
-            // 3、验证签名
+            // 2、验证签名
             this.doSignatureVerification(context.getResultObject(), context.getResultObject().getClass());
+            // 3、调用结果处理器
+            resultHandler.handleResult(context);
         };
         // 4、调用selectList查询数据
         getBaseMapper().selectList(queryWrapper, wapperHandler);
@@ -345,10 +369,10 @@ public interface IEnhanceService<T> extends IService<T> {
     default void listSigned(IPage<T> page, Wrapper<T> queryWrapper, ResultHandler<T> resultHandler) {
         // 1、封装结果处理器
         ResultHandler<T> wapperHandler = context -> {
-            // 2、调用结果处理器
-            resultHandler.handleResult(context);
-            // 3、验证签名
+            // 2、验证签名
             this.doSignatureVerification(context.getResultObject(), context.getResultObject().getClass());
+            // 3、调用结果处理器
+            resultHandler.handleResult(context);
         };
         // 4、调用selectList查询数据
         getBaseMapper().selectList(page, queryWrapper, wapperHandler);
@@ -357,6 +381,7 @@ public interface IEnhanceService<T> extends IService<T> {
     /**
      * 查询所有
      *
+     * @return 已逐条完成验签的全部实体
      * @see Wrappers#emptyWrapper()
      */
     default List<T> listSigned() {
@@ -379,6 +404,8 @@ public interface IEnhanceService<T> extends IService<T> {
      *
      * @param page         翻页对象
      * @param queryWrapper 实体对象封装操作类 {@link com.baomidou.mybatisplus.core.conditions.query.QueryWrapper}
+     * @param <E>          分页对象类型
+     * @return 已填充并逐条完成验签的分页对象
      */
     default <E extends IPage<T>> E pageSigned(E page, Wrapper<T> queryWrapper) {
         // 1、查询数据
@@ -394,6 +421,8 @@ public interface IEnhanceService<T> extends IService<T> {
      * 无条件翻页查询
      *
      * @param page 翻页对象
+     * @param <E>  分页对象类型
+     * @return 已填充并逐条完成验签的分页对象
      * @see Wrappers#emptyWrapper()
      */
     default <E extends IPage<T>> E pageSigned(E page) {
@@ -404,13 +433,14 @@ public interface IEnhanceService<T> extends IService<T> {
      * 查询列表
      *
      * @param queryWrapper 实体对象封装操作类 {@link com.baomidou.mybatisplus.core.conditions.query.QueryWrapper}
+     * @return 已逐条完成验签的字段 Map 列表
      */
     default List<Map<String, Object>> listSignedMaps(Wrapper<T> queryWrapper) {
         // 1、调用selectMaps查询数据
         List<Map<String, Object>> rtList = getBaseMapper().selectMaps(queryWrapper);
         // 2、验证签名
         if (CollectionUtils.isNotEmpty(rtList)) {
-            rtList.forEach(rowMap -> this.doSignatureVerification(rowMap, queryWrapper.getEntity().getClass()));
+            rtList.forEach(rowMap -> this.doSignatureVerification(rowMap, getSignedEntityClass()));
         }
         return rtList;
     }
@@ -425,10 +455,10 @@ public interface IEnhanceService<T> extends IService<T> {
     default void listSignedMaps(Wrapper<T> queryWrapper, ResultHandler<Map<String, Object>> resultHandler) {
         // 1、封装结果处理器
         ResultHandler<Map<String, Object>> wapperHandler = context -> {
-            // 2、调用结果处理器
+            // 2、验证签名
+            this.doSignatureVerification(context.getResultObject(), getSignedEntityClass());
+            // 3、调用结果处理器
             resultHandler.handleResult(context);
-            // 3、验证签名
-            this.doSignatureVerification(context.getResultObject(), queryWrapper.getEntity().getClass());
         };
         // 4、调用selectMaps查询数据
         getBaseMapper().selectMaps(queryWrapper, wapperHandler);
@@ -447,7 +477,7 @@ public interface IEnhanceService<T> extends IService<T> {
         List<Map<String, Object>> rtList = getBaseMapper().selectMaps(page, queryWrapper);
         // 2、验证签名
         if (CollectionUtils.isNotEmpty(rtList)) {
-            rtList.forEach(rowMap -> this.doSignatureVerification(rowMap, queryWrapper.getEntity().getClass()));
+            rtList.forEach(rowMap -> this.doSignatureVerification(rowMap, getSignedEntityClass()));
         }
         return rtList;
     }
@@ -463,10 +493,10 @@ public interface IEnhanceService<T> extends IService<T> {
     default void listSignedMaps(IPage<? extends Map<String, Object>> page, Wrapper<T> queryWrapper, ResultHandler<Map<String, Object>> resultHandler) {
         // 1、封装结果处理器
         ResultHandler<Map<String, Object>> wapperHandler = context -> {
-            // 2、调用结果处理器
+            // 2、验证签名
+            this.doSignatureVerification(context.getResultObject(), getSignedEntityClass());
+            // 3、调用结果处理器
             resultHandler.handleResult(context);
-            // 3、验证签名
-            this.doSignatureVerification(context.getResultObject(), queryWrapper.getEntity().getClass());
         };
         // 4、调用selectMaps查询数据
         getBaseMapper().selectMaps(page, queryWrapper, wapperHandler);
@@ -475,6 +505,7 @@ public interface IEnhanceService<T> extends IService<T> {
     /**
      * 查询所有列表
      *
+     * @return 已逐条完成验签的全部字段 Map
      * @see Wrappers#emptyWrapper()
      */
     default List<Map<String, Object>> listSignedMaps() {
@@ -485,6 +516,7 @@ public interface IEnhanceService<T> extends IService<T> {
      * 查询列表
      *
      * @param page 分页条件
+     * @return 已逐条完成验签的字段 Map 列表
      * @see Wrappers#emptyWrapper()
      */
     default List<Map<String, Object>> listSignedMaps(IPage<? extends Map<String, Object>> page) {
@@ -492,84 +524,19 @@ public interface IEnhanceService<T> extends IService<T> {
     }
 
     /**
-     * 查询全部记录
-     */
-    default <E> List<E> listSignedObjs() {
-        // 1、调用selectObjs查询数据
-        List<E> rtList = getBaseMapper().selectObjs(null);
-        // 2、验证签名
-        if (CollectionUtils.isNotEmpty(rtList)) {
-            rtList.forEach(rowObject -> this.doSignatureVerification(rowObject, rowObject.getClass()));
-        }
-        return rtList;
-    }
-
-    /**
-     * 查询全部记录
-     *
-     * @param mapper 转换函数
-     */
-    default <V> List<V> listSignedObjs(Function<? super Object, V> mapper) {
-        return listSignedObjs(Wrappers.emptyWrapper(), mapper);
-    }
-
-    /**
-     * 根据 Wrapper 条件，查询全部记录
-     *
-     * @param queryWrapper 实体对象封装操作类 {@link com.baomidou.mybatisplus.core.conditions.query.QueryWrapper}
-     */
-    default <E> List<E> listSignedObjs(Wrapper<T> queryWrapper) {
-        // 1、调用selectObjs查询数据
-        List<E> rtList = getBaseMapper().selectObjs(queryWrapper);
-        // 2、验证签名
-        if (CollectionUtils.isNotEmpty(rtList)) {
-            rtList.forEach(rowObject -> this.doSignatureVerification(rowObject, rowObject.getClass()));
-        }
-        return rtList;
-    }
-
-    /**
-     * 根据 Wrapper 条件，查询全部记录
-     *
-     * @param queryWrapper 实体对象封装操作类 {@link com.baomidou.mybatisplus.core.conditions.query.QueryWrapper}
-     * @param mapper       转换函数
-     */
-    default <V> List<V> listSignedObjs(Wrapper<T> queryWrapper, Function<? super Object, V> mapper) {
-        return listSignedObjs(queryWrapper).stream().filter(Objects::nonNull).map(mapper).collect(Collectors.toList());
-    }
-
-    /**
-     * 根据 Wrapper 条件，查询全部记录
-     * <p>注意： 只返回第一个字段的值</p>
-     *
-     * @param queryWrapper  实体对象封装操作类（可以为 null）
-     * @param resultHandler 结果处理器 {@link ResultHandler}
-     * @since 3.5.4
-     */
-    default <E> void listSignedObjs(Wrapper<T> queryWrapper, ResultHandler<E> resultHandler) {
-        // 1、封装结果处理器
-        ResultHandler<E> wapperHandler = context -> {
-            // 2、调用结果处理器
-            resultHandler.handleResult(context);
-            // 3、验证签名
-            this.doSignatureVerification(context.getResultObject(), context.getResultObject().getClass());
-        };
-        // 3、调用selectObjs查询数据
-        getBaseMapper().selectObjs(queryWrapper, wapperHandler);
-    }
-
-    /**
      * 翻页查询
      *
      * @param page         翻页对象
      * @param queryWrapper 实体对象封装操作类 {@link com.baomidou.mybatisplus.core.conditions.query.QueryWrapper}
+     * @param <E>          Map 分页对象类型
+     * @return 已填充并逐条完成验签的 Map 分页对象
      */
     default <E extends IPage<Map<String, Object>>> E pageSignedMaps(E page, Wrapper<T> queryWrapper) {
         // 1、查询数据
         page.setRecords(getBaseMapper().selectMaps(page, queryWrapper));
         // 2、验证签名
         if (CollectionUtils.isNotEmpty(page.getRecords())) {
-            page.getRecords().forEach(rowMap -> this.doSignatureVerification(rowMap, queryWrapper.getEntity().getClass()));
+            page.getRecords().forEach(rowMap -> this.doSignatureVerification(rowMap, getSignedEntityClass()));
         }
         return page;
     }
@@ -578,10 +545,12 @@ public interface IEnhanceService<T> extends IService<T> {
      * 无条件翻页查询
      *
      * @param page 翻页对象
+     * @param <E>  Map 分页对象类型
+     * @return 已填充并逐条完成验签的 Map 分页对象
      * @see Wrappers#emptyWrapper()
      */
     default <E extends IPage<Map<String, Object>>> E pageSignedMaps(E page) {
-        return pageMaps(page, Wrappers.emptyWrapper());
+        return pageSignedMaps(page, Wrappers.emptyWrapper());
     }
 
     /**

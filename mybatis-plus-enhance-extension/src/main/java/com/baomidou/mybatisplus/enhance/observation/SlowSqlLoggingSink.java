@@ -13,7 +13,14 @@ import java.util.Objects;
 @Slf4j
 public class SlowSqlLoggingSink implements SqlObservationSink {
 
+    /**
+     * 触发慢 SQL 日志的最小执行耗时，单位毫秒。
+     */
     private final long thresholdMillis;
+
+    /**
+     * 单条日志允许展示的最大 SQL 字符数。
+     */
     private final int maxSqlLength;
 
     /**

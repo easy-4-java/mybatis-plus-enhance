@@ -27,6 +27,9 @@ import java.util.ResourceBundle;
  */
 public class MultipleResourceBundle extends ResourceBundle {
 
+    /**
+     * 按查找优先级排列的子资源包快照。
+     */
     private final ResourceBundle[] bundles;
 
     /** 创建待由子类或反射配置的空复合资源包。 */
@@ -35,12 +38,20 @@ public class MultipleResourceBundle extends ResourceBundle {
     }
 
     /**
+     * 创建复合资源包，并复制传入数组以隔离调用方后续修改。
+     *
      * @param bundles 按查找优先级排列的资源包
      */
     public MultipleResourceBundle(ResourceBundle... bundles) {
         this.bundles = Objects.requireNonNull(bundles, "bundles must not be null").clone();
     }
 
+    /**
+     * 按声明顺序查找第一个包含指定键的资源包。
+     *
+     * @param key 资源键，不能为空
+     * @return 第一个命中的资源值；全部未命中时返回 {@code null}
+     */
     @Override
     protected Object handleGetObject(String key) {
         Objects.requireNonNull(key, "key must not be null");
@@ -57,6 +68,11 @@ public class MultipleResourceBundle extends ResourceBundle {
         return null;
     }
 
+    /**
+     * 合并父资源包与全部子资源包的键，并保持首次出现顺序。
+     *
+     * @return 去重后的资源键枚举
+     */
     @Override
     public Enumeration<String> getKeys() {
         return new ResourceBundleEnumeration(this.parent, this.bundles);

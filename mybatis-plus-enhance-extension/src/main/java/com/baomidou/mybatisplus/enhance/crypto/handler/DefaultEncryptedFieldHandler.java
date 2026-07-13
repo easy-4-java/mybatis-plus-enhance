@@ -1,7 +1,5 @@
 package com.baomidou.mybatisplus.enhance.crypto.handler;
 
-import cn.hutool.core.codec.Base64;
-import cn.hutool.core.util.HexUtil;
 import cn.hutool.crypto.Mode;
 import cn.hutool.crypto.Padding;
 import cn.hutool.crypto.digest.HMac;
@@ -9,22 +7,35 @@ import cn.hutool.crypto.digest.HmacAlgorithm;
 import cn.hutool.crypto.symmetric.SymmetricCrypto;
 import com.baomidou.mybatisplus.core.toolkit.ExceptionUtils;
 import com.baomidou.mybatisplus.enhance.crypto.enums.SymmetricAlgorithmType;
+import com.baomidou.mybatisplus.enhance.crypto.key.CryptoKeyMaterial;
+import com.baomidou.mybatisplus.enhance.crypto.key.CryptoKeyProvider;
 import com.baomidou.mybatisplus.enhance.util.SymmetricCryptoUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Objects;
 
 /**
- * 基于 Hutool 对称密码和 HMAC 的默认字段密码处理器。
+ * 使用版本化密文信封的默认字段密码处理器。
  *
- * <p>字段值通过 Jackson 序列化后加密，解密后再恢复目标类型。密钥和初始化向量必须由
- * 外部安全配置或密钥管理系统提供，禁止在生产代码中随机生成后打印。</p>
+ * <p>每次加密生成独立随机 IV，并采用 Encrypt-then-MAC 保护信封完整性。密文携带协议版本、
+ * keyId、算法、模式与填充信息，可在密钥轮换后解析历史数据。加密密钥与 HMAC 密钥由
+ * {@link CryptoKeyProvider} 分别提供，禁止同钥复用。</p>
  */
 @Slf4j
 public class DefaultEncryptedFieldHandler implements EncryptedFieldHandler {
+
+    private static final String CIPHER_VERSION = "MPE1";
+    private static final String HMAC_VERSION = "MPEH1";
+    private static final String SEPARATOR_REGEX = "\\.";
+    private static final int ENVELOPE_PARTS = 8;
+    private static final int HMAC_PARTS = 3;
+    private static final int BLOCK_IV_BYTES = 16;
 
     @Getter
     private final ObjectMapper objectMapper;
@@ -32,135 +43,176 @@ public class DefaultEncryptedFieldHandler implements EncryptedFieldHandler {
     private final HmacAlgorithm hmacAlgorithm;
     private final Mode mode;
     private final Padding padding;
-    private final byte[] key;
-    private final byte[] iv;
-    private final boolean plainIsEncode;
+    private final CryptoKeyProvider keyProvider;
+    private final SecureRandom secureRandom;
 
     /**
-     * 使用无 IV 配置创建默认 Base64 输出的处理器。
+     * 创建具备密钥轮换和完整性保护能力的字段密码处理器。
      *
-     * @param objectMapper  字段值 JSON 序列化器
-     * @param algorithmType 对称加密算法
+     * @param objectMapper  JSON 序列化器
+     * @param algorithmType 对称算法，只允许 AES 或 SM4
      * @param hmacAlgorithm HMAC 算法
-     * @param mode          对称密码工作模式
+     * @param mode          工作模式，不允许 ECB
      * @param padding       填充方式
-     * @param key           Base64 编码的密钥
+     * @param keyProvider   当前及历史密钥提供者
      */
-    public DefaultEncryptedFieldHandler(ObjectMapper objectMapper, SymmetricAlgorithmType algorithmType, HmacAlgorithm hmacAlgorithm, Mode mode, Padding padding, String key) {
-        this(objectMapper, algorithmType, hmacAlgorithm, mode, padding, key, null, true);
+    public DefaultEncryptedFieldHandler(ObjectMapper objectMapper,
+                                        SymmetricAlgorithmType algorithmType,
+                                        HmacAlgorithm hmacAlgorithm,
+                                        Mode mode,
+                                        Padding padding,
+                                        CryptoKeyProvider keyProvider) {
+        this(objectMapper, algorithmType, hmacAlgorithm, mode, padding, keyProvider, new SecureRandom());
     }
 
-    /**
-     * 创建默认 Base64 输出的处理器。
-     *
-     * @param objectMapper  字段值 JSON 序列化器
-     * @param algorithmType 对称加密算法
-     * @param hmacAlgorithm HMAC 算法
-     * @param mode          对称密码工作模式
-     * @param padding       填充方式
-     * @param key           Base64 编码的密钥
-     * @param iv            Base64 编码的初始化向量
-     */
-    public DefaultEncryptedFieldHandler(ObjectMapper objectMapper, SymmetricAlgorithmType algorithmType, HmacAlgorithm hmacAlgorithm, Mode mode, Padding padding, String key, String iv) {
-        this(objectMapper, algorithmType, hmacAlgorithm, mode, padding, key, iv, true);
-    }
-
-    /**
-     * 创建完整可配置的字段密码处理器。
-     *
-     * @param objectMapper  字段值 JSON 序列化器
-     * @param algorithmType 对称加密算法
-     * @param hmacAlgorithm HMAC 算法
-     * @param mode          对称密码工作模式
-     * @param padding       填充方式
-     * @param key           Base64 编码的密钥
-     * @param iv            Base64 编码的初始化向量，可为 {@code null}
-     * @param plainIsEncode {@code true} 输出 Base64，{@code false} 输出十六进制
-     */
-    public DefaultEncryptedFieldHandler(ObjectMapper objectMapper, SymmetricAlgorithmType algorithmType, HmacAlgorithm hmacAlgorithm, Mode mode, Padding padding, String key, String iv, boolean plainIsEncode) {
+    DefaultEncryptedFieldHandler(ObjectMapper objectMapper,
+                                 SymmetricAlgorithmType algorithmType,
+                                 HmacAlgorithm hmacAlgorithm,
+                                 Mode mode,
+                                 Padding padding,
+                                 CryptoKeyProvider keyProvider,
+                                 SecureRandom secureRandom) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
-        this.algorithmType = Objects.requireNonNull(algorithmType, "algorithmType must not be null");
+        this.algorithmType = requireSafeAlgorithm(algorithmType);
         this.hmacAlgorithm = Objects.requireNonNull(hmacAlgorithm, "hmacAlgorithm must not be null");
         this.mode = Objects.requireNonNull(mode, "mode must not be null");
+        if (mode == Mode.ECB) {
+            throw new IllegalArgumentException("ECB mode is not allowed");
+        }
         this.padding = Objects.requireNonNull(padding, "padding must not be null");
-        this.key = Base64.decode(Objects.requireNonNull(key, "key must not be null"));
-        this.iv = Objects.isNull(iv) ? null : Base64.decode(iv);
-        this.plainIsEncode = plainIsEncode;
+        this.keyProvider = Objects.requireNonNull(keyProvider, "keyProvider must not be null");
+        this.secureRandom = Objects.requireNonNull(secureRandom, "secureRandom must not be null");
+        validateKey(keyProvider.currentKey());
     }
 
-    /**
-     * 序列化并加密字段值。
-     *
-     * @param value 待加密值
-     * @param <T>   值类型
-     * @return Base64 或算法实现定义的密文字符串
-     */
     @Override
     public <T> String encrypt(T value) {
         try {
-            // 1、序列化Value
-            String valueAsString = getObjectMapper().writeValueAsString(value);
-            // 2、获取加密器
+            CryptoKeyMaterial key = keyProvider.currentKey();
+            validateKey(key);
+            byte[] iv = new byte[BLOCK_IV_BYTES];
+            secureRandom.nextBytes(iv);
             SymmetricCrypto crypto = SymmetricCryptoUtil.getSymmetricCrypto(
-                    algorithmType.getName(), mode, padding, key, iv);
-            // 3、加密Value，如果 plainIsEncode =true 则对加密结果进行Base64
-            if (plainIsEncode) {
-                valueAsString = crypto.encryptBase64(valueAsString);
-            } else {
-                valueAsString = crypto.encryptHex(valueAsString);
-            }
-            return valueAsString;
-        } catch (Exception ex) {
-            log.error("{} Encrypt Error : {}", algorithmType.getName(), ex.getMessage());
-            throw ExceptionUtils.mpe("{} Encrypt Error", ex, algorithmType.getName());
+                    algorithmType.getName(), mode, padding, key.getEncryptionKey(), iv);
+            byte[] ciphertext = crypto.encrypt(objectMapper.writeValueAsBytes(value));
+            String header = String.join(".",
+                    CIPHER_VERSION,
+                    encode(key.getKeyId().getBytes(StandardCharsets.UTF_8)),
+                    algorithmType.getName(), mode.name(), padding.name(),
+                    encode(iv), encode(ciphertext));
+            return header + '.' + encode(mac(key, header.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception exception) {
+            log.error("{} encrypt failed", algorithmType.getName());
+            throw ExceptionUtils.mpe("{} encrypt failed", exception, algorithmType.getName());
         }
     }
 
-    /**
-     * 解密字段并反序列化为目标类型。
-     *
-     * @param value  密文字符串
-     * @param rtType 目标类型
-     * @param <T>    目标泛型
-     * @return 解密后的值
-     */
     @Override
-    public <T> T decrypt(String value, Class<T> rtType) {
+    public <T> T decrypt(String value, Class<T> resultType) {
         try {
-            // 2、获取解密器
-            SymmetricCrypto crypto = SymmetricCryptoUtil.getSymmetricCrypto(algorithmType.getName(), mode, padding, key, iv);
-            // 3、解密请求体
-            byte[] encryptedBytes = plainIsEncode ? Base64.decode(value) : HexUtil.decodeHex(value);
-            String decryptStr = crypto.decryptStr(encryptedBytes, StandardCharsets.UTF_8);
-            return getObjectMapper().readValue(decryptStr, rtType);
-        } catch (Exception ex) {
-            log.error("{} Decrypt Error : {}", algorithmType.getName(), ex.getMessage());
-            throw ExceptionUtils.mpe("{} Decrypt Error", ex, algorithmType.getName());
+            String[] parts = value.split(SEPARATOR_REGEX, -1);
+            if (parts.length != ENVELOPE_PARTS || !CIPHER_VERSION.equals(parts[0])) {
+                throw new IllegalArgumentException("Unsupported ciphertext envelope");
+            }
+            String keyId = new String(decode(parts[1]), StandardCharsets.UTF_8);
+            CryptoKeyMaterial key = keyProvider.findKey(keyId)
+                    .orElseThrow(() -> new IllegalStateException("Unknown crypto keyId: " + keyId));
+            validateKey(key);
+            String header = String.join(".", parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6]);
+            byte[] expectedMac = mac(key, header.getBytes(StandardCharsets.UTF_8));
+            if (!MessageDigest.isEqual(expectedMac, decode(parts[7]))) {
+                throw new IllegalStateException("Ciphertext envelope authentication failed");
+            }
+            SymmetricAlgorithmType envelopeAlgorithm = resolveAlgorithm(parts[2]);
+            requireSafeAlgorithm(envelopeAlgorithm);
+            Mode envelopeMode = Mode.valueOf(parts[3]);
+            if (envelopeMode == Mode.ECB) {
+                throw new IllegalArgumentException("ECB mode is not allowed");
+            }
+            Padding envelopePadding = Padding.valueOf(parts[4]);
+            SymmetricCrypto crypto = SymmetricCryptoUtil.getSymmetricCrypto(
+                    envelopeAlgorithm.getName(), envelopeMode, envelopePadding,
+                    key.getEncryptionKey(), decode(parts[5]));
+            byte[] plaintext = crypto.decrypt(decode(parts[6]));
+            return objectMapper.readValue(plaintext, resultType);
+        } catch (Exception exception) {
+            log.error("Ciphertext decrypt failed");
+            throw ExceptionUtils.mpe("Ciphertext decrypt failed", exception);
         }
     }
 
-    /**
-     * 对字段值的序列化结果计算 HMAC。
-     *
-     * @param value 待签名值
-     * @param <T>   值类型
-     * @return HMAC 字符串
-     */
     @Override
     public <T> String hmac(T value) {
         try {
-            HMac hMac = SymmetricCryptoUtil.getHmac(hmacAlgorithm, key);
-            String hmacValue;
-            if (plainIsEncode) {
-                hmacValue = hMac.digestBase64(getObjectMapper().writeValueAsString(value), StandardCharsets.UTF_8, Boolean.TRUE);
-            } else {
-                hmacValue = hMac.digestHex(getObjectMapper().writeValueAsString(value));
-            }
-            return hmacValue;
-        } catch (Exception ex) {
-            log.error("HMAC Digest Error : {}", ex.getMessage());
-            throw ExceptionUtils.mpe("HMAC Digest Error", ex);
+            CryptoKeyMaterial key = keyProvider.currentKey();
+            validateKey(key);
+            return HMAC_VERSION + '.' + encode(key.getKeyId().getBytes(StandardCharsets.UTF_8)) + '.'
+                    + encode(mac(key, objectMapper.writeValueAsBytes(value)));
+        } catch (Exception exception) {
+            log.error("HMAC digest failed");
+            throw ExceptionUtils.mpe("HMAC digest failed", exception);
         }
     }
 
+    @Override
+    public <T> boolean verifyHmac(T value, String signature) {
+        try {
+            if (Objects.isNull(signature)) {
+                return false;
+            }
+            String[] parts = signature.split(SEPARATOR_REGEX, -1);
+            if (parts.length != HMAC_PARTS || !HMAC_VERSION.equals(parts[0])) {
+                return false;
+            }
+            String keyId = new String(decode(parts[1]), StandardCharsets.UTF_8);
+            CryptoKeyMaterial key = keyProvider.findKey(keyId).orElse(null);
+            if (Objects.isNull(key)) {
+                return false;
+            }
+            return MessageDigest.isEqual(mac(key, objectMapper.writeValueAsBytes(value)), decode(parts[2]));
+        } catch (Exception exception) {
+            return false;
+        }
+    }
+
+    private byte[] mac(CryptoKeyMaterial key, byte[] value) {
+        HMac hMac = SymmetricCryptoUtil.getHmac(hmacAlgorithm, key.getAuthenticationKey());
+        return hMac.digest(value);
+    }
+
+    private void validateKey(CryptoKeyMaterial key) {
+        Objects.requireNonNull(key, "crypto key must not be null");
+        int length = key.getEncryptionKey().length;
+        if (algorithmType == SymmetricAlgorithmType.AES && length != 16 && length != 24 && length != 32) {
+            throw new IllegalArgumentException("AES key must contain 16, 24 or 32 bytes");
+        }
+        if (algorithmType == SymmetricAlgorithmType.SM4 && length != 16) {
+            throw new IllegalArgumentException("SM4 key must contain 16 bytes");
+        }
+    }
+
+    private SymmetricAlgorithmType requireSafeAlgorithm(SymmetricAlgorithmType algorithm) {
+        Objects.requireNonNull(algorithm, "algorithmType must not be null");
+        if (algorithm != SymmetricAlgorithmType.AES && algorithm != SymmetricAlgorithmType.SM4) {
+            throw new IllegalArgumentException("Only AES and SM4 are allowed for new ciphertext");
+        }
+        return algorithm;
+    }
+
+    private SymmetricAlgorithmType resolveAlgorithm(String name) {
+        for (SymmetricAlgorithmType type : SymmetricAlgorithmType.values()) {
+            if (type.getName().equalsIgnoreCase(name)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Unsupported ciphertext algorithm: " + name);
+    }
+
+    private String encode(byte[] value) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(value);
+    }
+
+    private byte[] decode(String value) {
+        return Base64.getUrlDecoder().decode(value);
+    }
 }

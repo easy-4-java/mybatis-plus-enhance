@@ -22,6 +22,9 @@ import java.util.*;
  */
 public class ResourceBundleEnumeration implements Enumeration<String> {
 
+    /**
+     * 指向去重后资源键集合的迭代器。
+     */
     private final Iterator<String> iterator;
 
     /**
@@ -50,11 +53,22 @@ public class ResourceBundleEnumeration implements Enumeration<String> {
         this.iterator = keys.iterator();
     }
 
+    /**
+     * 判断是否还有未返回的资源键。
+     *
+     * @return 尚有资源键时返回 {@code true}
+     */
     @Override
     public boolean hasMoreElements() {
         return iterator.hasNext();
     }
 
+    /**
+     * 返回下一个资源键。
+     *
+     * @return 下一个去重后的资源键
+     * @throws NoSuchElementException 已遍历完全部资源键时抛出
+     */
     @Override
     public String nextElement() {
         return iterator.next();

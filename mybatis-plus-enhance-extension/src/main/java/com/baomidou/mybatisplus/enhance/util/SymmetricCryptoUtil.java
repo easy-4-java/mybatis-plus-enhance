@@ -21,6 +21,9 @@ import java.util.Objects;
  */
 public final class SymmetricCryptoUtil {
 
+    /**
+     * 工具类不允许实例化。
+     */
     private SymmetricCryptoUtil() {
     }
 
@@ -72,6 +75,12 @@ public final class SymmetricCryptoUtil {
 
     /**
      * 创建 SM4 加密器。
+     *
+     * @param mode    工作模式
+     * @param padding 填充方式
+     * @param key     UTF-8 文本密钥
+     * @param iv      UTF-8 文本初始化向量，可为 {@code null}
+     * @return 独立的 SM4 加密器
      */
     public static SymmetricCrypto getSm4(Mode mode, Padding padding, String key, String iv) {
         return getSymmetricCrypto(SM4.ALGORITHM_NAME, mode, padding, key, iv);
@@ -79,6 +88,12 @@ public final class SymmetricCryptoUtil {
 
     /**
      * 创建 AES 加密器。
+     *
+     * @param mode    工作模式
+     * @param padding 填充方式
+     * @param key     UTF-8 文本密钥
+     * @param iv      UTF-8 文本初始化向量，可为 {@code null}
+     * @return 独立的 AES 加密器
      */
     public static SymmetricCrypto getAes(Mode mode, Padding padding, String key, String iv) {
         return getSymmetricCrypto(SymmetricAlgorithm.AES.name(), mode, padding, key, iv);
@@ -86,6 +101,10 @@ public final class SymmetricCryptoUtil {
 
     /**
      * 使用 UTF-8 文本密钥创建 HMAC。
+     *
+     * @param hmacAlgorithm HMAC 算法
+     * @param key           UTF-8 文本密钥
+     * @return 独立的 HMAC 实例
      */
     public static HMac getHmac(HmacAlgorithm hmacAlgorithm, String key) {
         Objects.requireNonNull(key, "key must not be null");

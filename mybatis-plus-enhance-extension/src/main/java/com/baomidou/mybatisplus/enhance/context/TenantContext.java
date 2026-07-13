@@ -29,6 +29,9 @@ import java.util.Objects;
  */
 public class TenantContext {
 
+    /**
+     * 当前执行链绑定的租户标识。
+     */
     private static final TransmittableThreadLocal<Object> CURRENT_TENANT_ID = new TransmittableThreadLocal<>();
 
     /**
@@ -79,10 +82,27 @@ public class TenantContext {
      */
     public static final class Scope implements AutoCloseable {
 
+        /**
+         * 负责恢复租户状态的上下文实例。
+         */
         private final TenantContext context;
+
+        /**
+         * 打开当前作用域前绑定的租户标识。
+         */
         private final Object previousTenantId;
+
+        /**
+         * 是否已关闭，用于保证恢复操作幂等。
+         */
         private boolean closed;
 
+        /**
+         * 创建租户作用域恢复句柄。
+         *
+         * @param context          租户上下文
+         * @param previousTenantId 进入作用域前的租户标识
+         */
         private Scope(TenantContext context, Object previousTenantId) {
             this.context = context;
             this.previousTenantId = previousTenantId;

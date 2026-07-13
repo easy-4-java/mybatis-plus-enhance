@@ -21,6 +21,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Slf4j
 public class SqlObservationInnerInterceptor implements EnhanceInnerInterceptor {
 
+    @Override
+    public EnhancePhase phase() {
+        return EnhancePhase.OBSERVATION;
+    }
+
+    /**
+     * 并发安全的 SQL 观测结果接收器集合。
+     */
     private final List<SqlObservationSink> sinks = new CopyOnWriteArrayList<>();
 
     /**

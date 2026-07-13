@@ -2,6 +2,7 @@ package com.baomidou.mybatisplus.enhance.plugins;
 
 import com.baomidou.mybatisplus.enhance.observation.SqlObservation;
 import com.baomidou.mybatisplus.enhance.plugins.inner.EnhanceInnerInterceptor;
+import com.baomidou.mybatisplus.enhance.plugins.inner.EnhancePhase;
 import com.baomidou.mybatisplus.enhance.plugins.inner.SqlObservationInnerInterceptor;
 import org.apache.ibatis.builder.StaticSqlSource;
 import org.apache.ibatis.cache.CacheKey;
@@ -18,6 +19,7 @@ import org.junit.Test;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -88,6 +90,52 @@ public class MybatisPlusEnhanceInterceptorLifecycleTest {
         assertNull(recorder.failure);
     }
 
+    @Test
+    public void shouldReturnTransformedQueryResultWithoutMutatingCachedResult() throws Throwable {
+        MybatisPlusEnhanceInterceptor interceptor = new MybatisPlusEnhanceInterceptor();
+        interceptor.addInnerInterceptor(new EnhanceInnerInterceptor() {
+            @Override
+            public List<Object> afterQuery(Executor executor, MappedStatement ms, Object parameter,
+                                           RowBounds rowBounds, ResultHandler<?> resultHandler,
+                                           BoundSql boundSql, List<Object> result) {
+                List<Object> transformed = new ArrayList<>(result);
+                transformed.set(0, "transformed");
+                return transformed;
+            }
+        });
+        List<Object> cachedResult = new ArrayList<>(Collections.<Object>singletonList("raw"));
+        Executor executor = executorReturning(cachedResult, null);
+
+        Object actual = interceptor.intercept(queryInvocation(
+                executor, mappedStatement("mapper.select", SqlCommandType.SELECT, "SELECT 1")));
+
+        assertEquals(Collections.singletonList("transformed"), actual);
+        assertEquals(Collections.singletonList("raw"), cachedResult);
+        assertNotSame(cachedResult, actual);
+    }
+
+    @Test
+    public void shouldRejectInvalidEnhancePhaseOrder() {
+        MybatisPlusEnhanceInterceptor interceptor = new MybatisPlusEnhanceInterceptor();
+        interceptor.addInnerInterceptor(phased(EnhancePhase.DATA_SIGNATURE));
+
+        try {
+            interceptor.addInnerInterceptor(phased(EnhancePhase.PARAMETER_ENCRYPTION));
+            fail("Expected invalid phase order to be rejected");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("PARAMETER_ENCRYPTION"));
+        }
+    }
+
+    private EnhanceInnerInterceptor phased(EnhancePhase phase) {
+        return new EnhanceInnerInterceptor() {
+            @Override
+            public EnhancePhase phase() {
+                return phase;
+            }
+        };
+    }
+
     private Invocation queryInvocation(Executor executor, MappedStatement mappedStatement) throws Exception {
         Method method = Executor.class.getMethod("query", MappedStatement.class, Object.class,
                 RowBounds.class, ResultHandler.class);
@@ -131,9 +179,10 @@ public class MybatisPlusEnhanceInterceptorLifecycleTest {
         private Throwable failure;
 
         @Override
-        public void afterQuery(Executor executor, MappedStatement ms, Object parameter, RowBounds rowBounds,
-                               ResultHandler<?> resultHandler, BoundSql boundSql, List<Object> result) {
+        public List<Object> afterQuery(Executor executor, MappedStatement ms, Object parameter, RowBounds rowBounds,
+                                       ResultHandler<?> resultHandler, BoundSql boundSql, List<Object> result) {
             afterQueryCount++;
+            return result;
         }
 
         @Override
