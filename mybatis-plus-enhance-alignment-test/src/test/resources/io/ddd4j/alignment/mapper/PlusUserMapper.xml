@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.ddd4j.alignment.mapper.PlusUserMapper">
+
+    <delete id="deleteAll">
+        DELETE FROM user_entity
+    </delete>
+
+    <!-- Plus 端 insert：用 mapper XML 覆盖 MyBatis-Plus 自动 SQL（类名推断表名不正确） -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_entity (name, mobile, email, hamc)
+        VALUES (#{name}, #{mobile}, #{email}, #{hamc})
+    </insert>
+
+    <select id="selectById" resultType="io.ddd4j.alignment.entity.SharedUserEntity">
+        SELECT id, name, mobile, email, hamc
+        FROM user_entity
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectList" resultType="io.ddd4j.alignment.entity.SharedUserEntity">
+        SELECT id, name, mobile, email, hamc
+        FROM user_entity
+    </select>
+
+    <select id="selectIgnoreDecryptById" resultType="io.ddd4j.alignment.entity.SharedUserEntity">
+        SELECT id, name, mobile, email, hamc
+        FROM user_entity
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectBatchIds" resultType="io.ddd4j.alignment.entity.SharedUserEntity">
+        SELECT id, name, mobile, email, hamc
+        FROM user_entity
+        WHERE id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+</mapper>
