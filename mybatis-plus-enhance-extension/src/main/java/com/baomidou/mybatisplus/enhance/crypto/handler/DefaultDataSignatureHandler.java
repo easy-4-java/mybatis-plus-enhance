@@ -13,8 +13,8 @@ import com.baomidou.mybatisplus.core.toolkit.ExceptionUtils;
 import com.baomidou.mybatisplus.enhance.util.TableFieldHelper;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.mybatis.enhance.annotation.crypto.TableSignature;
-import org.apache.mybatis.enhance.annotation.crypto.TableSignatureField;
+import org.apache.ibatis.enhance.annotation.crypto.TableSignature;
+import org.apache.ibatis.enhance.annotation.crypto.TableSignatureField;
 
 import java.util.*;
 

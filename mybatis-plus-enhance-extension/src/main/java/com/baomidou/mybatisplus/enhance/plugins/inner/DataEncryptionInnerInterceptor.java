@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.update.Update;
 import com.baomidou.mybatisplus.core.toolkit.AnnotationUtils;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.baomidou.mybatisplus.core.toolkit.ObjectUtils;
-import org.apache.mybatis.enhance.annotation.crypto.IgnoreEncrypted;
+import org.apache.ibatis.enhance.annotation.crypto.IgnoreEncrypted;
 import com.baomidou.mybatisplus.enhance.crypto.handler.DataEncryptionHandler;
 import com.baomidou.mybatisplus.enhance.crypto.handler.DefaultDataEncryptionHandler;
 import com.baomidou.mybatisplus.enhance.crypto.handler.EncryptedFieldHandler;
