@@ -1,7 +1,6 @@
 package com.baomidou.mybatisplus.enhance.tenant;
 
 import com.baomidou.mybatisplus.enhance.context.TenantContext;
-import com.baomidou.mybatisplus.enhance.plugins.handler.DefaultTenantLineHandler;
 import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.StringValue;
 import org.junit.After;

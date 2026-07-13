@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.baomidou.mybatisplus.enhance.plugins.handler;
+package com.baomidou.mybatisplus.enhance.tenant;
 
 import com.baomidou.mybatisplus.enhance.context.TenantContext;
 import com.baomidou.mybatisplus.extension.plugins.handler.TenantLineHandler;
@@ -28,6 +28,8 @@ import java.util.function.Predicate;
  * 默认 MyBatis-Plus 租户处理器。
  *
  * <p>租户值由 {@link TenantContext} 提供，租户字段和忽略表策略可由使用方配置。</p>
+ *
+ * @since 2.0.0
  */
 public class DefaultTenantLineHandler implements TenantLineHandler {
 

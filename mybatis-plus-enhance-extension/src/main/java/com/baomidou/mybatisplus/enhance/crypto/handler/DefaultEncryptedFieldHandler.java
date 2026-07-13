@@ -6,6 +6,9 @@ import cn.hutool.crypto.digest.HMac;
 import cn.hutool.crypto.digest.HmacAlgorithm;
 import cn.hutool.crypto.symmetric.SymmetricCrypto;
 import com.baomidou.mybatisplus.core.toolkit.ExceptionUtils;
+import com.baomidou.mybatisplus.enhance.crypto.enums.CipherMode;
+import com.baomidou.mybatisplus.enhance.crypto.enums.CipherPadding;
+import com.baomidou.mybatisplus.enhance.crypto.enums.HmacType;
 import com.baomidou.mybatisplus.enhance.crypto.enums.SymmetricAlgorithmType;
 import com.baomidou.mybatisplus.enhance.crypto.key.CryptoKeyMaterial;
 import com.baomidou.mybatisplus.enhance.crypto.key.CryptoKeyProvider;
@@ -51,11 +54,54 @@ public class DefaultEncryptedFieldHandler implements EncryptedFieldHandler {
      *
      * @param objectMapper  JSON 序列化器
      * @param algorithmType 对称算法，只允许 AES 或 SM4
-     * @param hmacAlgorithm HMAC 算法
-     * @param mode          工作模式，不允许 ECB
-     * @param padding       填充方式
+     * @param hmacType      HMAC 算法
+     * @param cipherMode    工作模式，不允许 ECB
+     * @param cipherPadding 填充方式
      * @param keyProvider   当前及历史密钥提供者
+     * @since 2.0.0
      */
+    public DefaultEncryptedFieldHandler(ObjectMapper objectMapper,
+                                        SymmetricAlgorithmType algorithmType,
+                                        HmacType hmacType,
+                                        CipherMode cipherMode,
+                                        CipherPadding cipherPadding,
+                                        CryptoKeyProvider keyProvider) {
+        this(objectMapper, algorithmType, hmacType, cipherMode, cipherPadding, keyProvider, new SecureRandom());
+    }
+
+    DefaultEncryptedFieldHandler(ObjectMapper objectMapper,
+                                 SymmetricAlgorithmType algorithmType,
+                                 HmacType hmacType,
+                                 CipherMode cipherMode,
+                                 CipherPadding cipherPadding,
+                                 CryptoKeyProvider keyProvider,
+                                 SecureRandom secureRandom) {
+        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        this.algorithmType = requireSafeAlgorithm(algorithmType);
+        this.hmacAlgorithm = Objects.requireNonNull(hmacType, "hmacType must not be null").toHutoolAlgorithm();
+        this.mode = Objects.requireNonNull(cipherMode, "cipherMode must not be null").toHutoolMode();
+        if (cipherMode == CipherMode.ECB) {
+            throw new IllegalArgumentException("ECB mode is not allowed");
+        }
+        this.padding = Objects.requireNonNull(cipherPadding, "cipherPadding must not be null").toHutoolPadding();
+        this.keyProvider = Objects.requireNonNull(keyProvider, "keyProvider must not be null");
+        this.secureRandom = Objects.requireNonNull(secureRandom, "secureRandom must not be null");
+        validateKey(keyProvider.currentKey());
+    }
+
+    /**
+     * 使用 Hutool 类型创建字段密码处理器。
+     *
+     * @param objectMapper  JSON 序列化器
+     * @param algorithmType 对称算法
+     * @param hmacAlgorithm Hutool HMAC 算法
+     * @param mode          Hutool 工作模式
+     * @param padding       Hutool 填充方式
+     * @param keyProvider   当前及历史密钥提供者
+     * @deprecated 使用 {@link #DefaultEncryptedFieldHandler(ObjectMapper, SymmetricAlgorithmType, HmacType, CipherMode, CipherPadding, CryptoKeyProvider)} 替代，
+     *             避免公共 API 直接依赖 Hutool 类型。
+     */
+    @Deprecated
     public DefaultEncryptedFieldHandler(ObjectMapper objectMapper,
                                         SymmetricAlgorithmType algorithmType,
                                         HmacAlgorithm hmacAlgorithm,
@@ -65,6 +111,7 @@ public class DefaultEncryptedFieldHandler implements EncryptedFieldHandler {
         this(objectMapper, algorithmType, hmacAlgorithm, mode, padding, keyProvider, new SecureRandom());
     }
 
+    @Deprecated
     DefaultEncryptedFieldHandler(ObjectMapper objectMapper,
                                  SymmetricAlgorithmType algorithmType,
                                  HmacAlgorithm hmacAlgorithm,

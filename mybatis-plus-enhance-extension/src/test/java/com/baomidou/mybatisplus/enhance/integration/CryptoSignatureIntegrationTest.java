@@ -1,8 +1,8 @@
 package com.baomidou.mybatisplus.enhance.integration;
 
-import cn.hutool.crypto.Mode;
-import cn.hutool.crypto.Padding;
-import cn.hutool.crypto.digest.HmacAlgorithm;
+import com.baomidou.mybatisplus.enhance.crypto.enums.CipherMode;
+import com.baomidou.mybatisplus.enhance.crypto.enums.CipherPadding;
+import com.baomidou.mybatisplus.enhance.crypto.enums.HmacType;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -65,8 +65,8 @@ public class CryptoSignatureIntegrationTest {
         }
 
         DefaultEncryptedFieldHandler encryptedFieldHandler = new DefaultEncryptedFieldHandler(
-                new ObjectMapper(), SymmetricAlgorithmType.AES, HmacAlgorithm.HmacSHA256,
-                Mode.CBC, Padding.PKCS5Padding,
+                new ObjectMapper(), SymmetricAlgorithmType.AES, HmacType.HmacSHA256,
+                CipherMode.CBC, CipherPadding.PKCS5Padding,
                 new StaticCryptoKeyProvider(new CryptoKeyMaterial(
                         "integration-v1", bytes('e', 16), bytes('m', 32))));
         DefaultDataEncryptionHandler encryptionHandler = new DefaultDataEncryptionHandler(encryptedFieldHandler);

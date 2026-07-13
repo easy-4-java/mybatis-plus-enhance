@@ -1,8 +1,8 @@
 package com.baomidou.mybatisplus.enhance.crypto.handler;
 
-import cn.hutool.crypto.Mode;
-import cn.hutool.crypto.Padding;
-import cn.hutool.crypto.digest.HmacAlgorithm;
+import com.baomidou.mybatisplus.enhance.crypto.enums.CipherMode;
+import com.baomidou.mybatisplus.enhance.crypto.enums.CipherPadding;
+import com.baomidou.mybatisplus.enhance.crypto.enums.HmacType;
 import com.baomidou.mybatisplus.enhance.crypto.enums.SymmetricAlgorithmType;
 import com.baomidou.mybatisplus.enhance.crypto.key.CryptoKeyMaterial;
 import com.baomidou.mybatisplus.enhance.crypto.key.StaticCryptoKeyProvider;
@@ -80,8 +80,8 @@ public class DefaultEncryptedFieldHandlerTest {
 
     private DefaultEncryptedFieldHandler createHandler(StaticCryptoKeyProvider provider) {
         return new DefaultEncryptedFieldHandler(
-                new ObjectMapper(), SymmetricAlgorithmType.AES, HmacAlgorithm.HmacSHA256,
-                Mode.CBC, Padding.PKCS5Padding, provider);
+                new ObjectMapper(), SymmetricAlgorithmType.AES, HmacType.HmacSHA256,
+                CipherMode.CBC, CipherPadding.PKCS5Padding, provider);
     }
 
     private CryptoKeyMaterial key(String keyId, char encryptionByte, char authenticationByte) {

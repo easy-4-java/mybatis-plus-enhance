@@ -7,9 +7,11 @@ import java.util.Locale;
 
 /**
  * MyBatis 查询结果国际化处理器。
- * <p>
- * 拦截器负责在查询完成后提供当前 Locale、MappedStatement 和结果列表，
- * 具体字段选择、外部数据合并或翻译表查询策略由实现决定。
+ *
+ * <p>拦截器负责在查询完成后提供当前 Locale、MappedStatement 和结果列表，
+ * 具体字段选择、外部数据合并或翻译表查询策略由实现决定。</p>
+ *
+ * @since 2.0.0
  */
 @FunctionalInterface
 public interface DataI18nHandler {

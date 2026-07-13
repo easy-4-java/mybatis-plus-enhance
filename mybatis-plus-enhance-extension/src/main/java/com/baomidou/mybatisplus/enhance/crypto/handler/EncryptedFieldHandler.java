@@ -5,6 +5,8 @@ package com.baomidou.mybatisplus.enhance.crypto.handler;
  *
  * <p>业务可以实现该接口接入 KMS、硬件密码机或自定义密钥管理方案。实现不得在日志中
  * 输出明文、密钥、初始化向量或完整密文。</p>
+ *
+ * @since 2.0.0
  */
 public interface EncryptedFieldHandler {
 
