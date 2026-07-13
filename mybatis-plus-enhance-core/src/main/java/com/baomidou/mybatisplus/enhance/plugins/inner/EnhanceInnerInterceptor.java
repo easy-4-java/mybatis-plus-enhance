@@ -18,6 +18,8 @@ import java.util.List;
  * SQL 执行完成后的回调。实现类由 {@code MybatisPlusEnhanceInterceptor} 统一调度。</p>
  *
  * <p>结果增强方法可以修改返回对象；执行完成方法应保持旁路特性，不得影响 SQL 主流程。</p>
+ *
+ * @since 2.0.0
  */
 public interface EnhanceInnerInterceptor extends InnerInterceptor {
 

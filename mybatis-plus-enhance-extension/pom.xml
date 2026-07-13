@@ -56,10 +56,15 @@
             <groupId>com.alibaba</groupId>
             <artifactId>transmittable-thread-local</artifactId>
         </dependency>
-        <!-- Hutool：AES、SM4、HMAC、Base64、Hex 和反射辅助实现。 -->
+        <!-- Hutool Core：反射、集合、字符串等基础工具。 -->
         <dependency>
             <groupId>cn.hutool</groupId>
-            <artifactId>hutool-all</artifactId>
+            <artifactId>hutool-core</artifactId>
+        </dependency>
+        <!-- Hutool Crypto：AES、SM4、HMAC、Base64、Hex 等密码算法。 -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-crypto</artifactId>
         </dependency>
         <!-- Bouncy Castle：部分 JDK 上的 SM 系列算法 Provider，仅运行时加载。 -->
         <dependency>

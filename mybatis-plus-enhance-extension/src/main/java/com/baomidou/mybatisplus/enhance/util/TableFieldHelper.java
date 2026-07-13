@@ -206,30 +206,52 @@ public class TableFieldHelper {
     /**
      * 从实体或 Map 查询结果中读取主键值。
      *
-     * @param rawObject 原始结果对象
-     * @return 可序列化主键值
+     * <p>当 {@code rawObject} 为 {@code null} 时返回 {@code null}；
+     * 当 {@code rawObject} 为 {@link Map} 且无法获取表元数据时，按约定主键列名 {@code id} 取值。</p>
+     *
+     * @param rawObject 原始结果对象，可为 {@code null}
+     * @return 可序列化主键值，未找到时返回 {@code null}
      */
     public static Serializable getKeyValue(Object rawObject) {
+        if (Objects.isNull(rawObject)) {
+            return null;
+        }
+        if (rawObject instanceof Map) {
+            // Map 类型无法从 TableInfoHelper 获取元数据，按约定主键列名取值
+            return getKeyValue(rawObject, null);
+        }
         return getKeyValue(rawObject, TableInfoHelper.getTableInfo(rawObject.getClass()));
     }
 
     /**
      * 使用指定表元数据从实体或 Map 中读取主键值。
      *
-     * @param rawObject 原始结果对象
-     * @param tableInfo MyBatis-Plus 表元数据
-     * @return 可序列化主键值
+     * <p>当 {@code rawObject} 为 {@code null} 时返回 {@code null}。
+     * 当 {@code tableInfo} 为 {@code null} 时，若 {@code rawObject} 为 {@link Map}，按约定主键属性名 {@code id} 取值；
+     * 若为实体对象则抛出 {@link IllegalArgumentException}。</p>
+     *
+     * @param rawObject 原始结果对象，可为 {@code null}
+     * @param tableInfo MyBatis-Plus 表元数据，Map 输入时允许为 {@code null}
+     * @return 可序列化主键值，未找到时返回 {@code null}
      */
     public static Serializable getKeyValue(Object rawObject, TableInfo tableInfo) {
+        if (Objects.isNull(rawObject)) {
+            return null;
+        }
         // 1、获取主键值
         Serializable keyValue;
         // 1.1、如果源数据是Map类型，则从Map中获取主键值
         if (rawObject instanceof Map) {
             Map<?, ?> rawMap = (Map<?, ?>) rawObject;
-            keyValue = MapUtil.getStr(rawMap, tableInfo.getKeyProperty());
+            String keyProperty = Objects.nonNull(tableInfo) ? tableInfo.getKeyProperty() : "id";
+            keyValue = MapUtil.getStr(rawMap, keyProperty);
         }
         // 1.2、如果源数据是对象类型，则从对象中获取主键值
         else {
+            if (Objects.isNull(tableInfo)) {
+                throw new IllegalArgumentException(
+                        "tableInfo is required for entity type: " + rawObject.getClass().getName());
+            }
             keyValue = (Serializable) ReflectUtil.getFieldValue(rawObject, tableInfo.getKeyProperty());
         }
         return keyValue;

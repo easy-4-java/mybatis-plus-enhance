@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.core.conditions.AbstractWrapper;
  * 数据签名与验签处理器。
  *
  * <p>负责根据实体签名元数据生成完整性签名，并在查询后校验持久化签名。</p>
+ *
+ * @since 2.0.0
  */
 public interface DataSignatureHandler {
 

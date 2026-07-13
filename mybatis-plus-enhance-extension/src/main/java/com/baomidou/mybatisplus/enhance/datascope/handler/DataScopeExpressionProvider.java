@@ -8,6 +8,8 @@ import net.sf.jsqlparser.schema.Table;
  * 数据权限 SQL 表达式提供者。
  *
  * <p>实现根据当前用户、组织、角色或其他权限上下文生成附加 WHERE 条件。</p>
+ *
+ * @since 2.0.0
  */
 public interface DataScopeExpressionProvider {
 
