@@ -32,15 +32,13 @@ import java.util.Objects;
  *
  * <p>同一 MyBatis Configuration 中只应注册一个外层拦截器链入口。</p>
  */
-@Intercepts(
-        {
-                @Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class}),
-                @Signature(type = StatementHandler.class, method = "getBoundSql", args = {}),
-                @Signature(type = Executor.class, method = "update", args = {MappedStatement.class, Object.class}),
-                @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class}),
-                @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class, CacheKey.class, BoundSql.class})
-        }
-)
+@Intercepts({
+    @Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class}),
+    @Signature(type = StatementHandler.class, method = "getBoundSql", args = {}),
+    @Signature(type = Executor.class, method = "update", args = {MappedStatement.class, Object.class}),
+    @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class}),
+    @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class, CacheKey.class, BoundSql.class})
+})
 @Slf4j
 public class MybatisPlusEnhanceInterceptor extends MybatisPlusInterceptor {
 
