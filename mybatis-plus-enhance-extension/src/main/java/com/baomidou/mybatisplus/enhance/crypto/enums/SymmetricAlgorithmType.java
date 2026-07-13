@@ -13,6 +13,13 @@ import lombok.Getter;
  * 枚举值只描述算法名称，实际安全性还取决于模式、填充、密钥长度、IV 生成和密钥管理。
  * 新系统应优先使用 AES 或 SM4 的安全模式，历史算法仅用于兼容已有密文。
  */
+
+/**
+ * 内置对称加密算法类型。
+ * <p>
+ * 枚举值只描述算法名称，实际安全性还取决于模式、填充、密钥长度、IV 生成和密钥管理。
+ * 新系统应优先使用 AES 或 SM4 的安全模式，历史算法仅用于兼容已有密文。
+ */
 @Getter
 public enum SymmetricAlgorithmType {
 
@@ -109,6 +116,20 @@ public enum SymmetricAlgorithmType {
     }
 
     /**
+     * 根据框架枚举模式与填充方式创建对称加密器。
+     *
+     * @param cipherMode    工作模式
+     * @param cipherPadding 填充方式
+     * @param key           密钥，不应写入日志或源码
+     * @param iv            初始化向量，其长度必须符合算法要求
+     * @return 已配置的对称加密器
+     * @since 2.0.0
+     */
+    public SymmetricCrypto getSymmetricCrypto(CipherMode cipherMode, CipherPadding cipherPadding, String key, String iv) {
+        return SymmetricCryptoUtil.getSymmetricCrypto(this.getName(), cipherMode.toHutoolMode(), cipherPadding.toHutoolPadding(), key, iv);
+    }
+
+    /**
      * 根据强类型模式与填充方式创建对称加密器。
      *
      * @param mode    工作模式
@@ -116,7 +137,10 @@ public enum SymmetricAlgorithmType {
      * @param key     密钥，不应写入日志或源码
      * @param iv      初始化向量，其长度必须符合算法要求
      * @return 已配置的对称加密器
+     * @deprecated 使用 {@link #getSymmetricCrypto(CipherMode, CipherPadding, String, String)} 替代，
+     *             避免公共 API 直接依赖 Hutool 类型。
      */
+    @Deprecated
     public SymmetricCrypto getSymmetricCrypto(Mode mode, Padding padding, String key, String iv) {
         return SymmetricCryptoUtil.getSymmetricCrypto(this.getName(), mode, padding, key, iv);
     }

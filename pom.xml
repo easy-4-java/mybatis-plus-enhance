@@ -245,10 +245,16 @@
             </dependency>
 
             <!-- 加密、序列化与通用工具。 -->
-            <!-- Hutool：密码算法、编码、反射及集合辅助。 -->
+            <!-- Hutool Core：反射、集合、字符串等基础工具。 -->
             <dependency>
                 <groupId>cn.hutool</groupId>
-                <artifactId>hutool-all</artifactId>
+                <artifactId>hutool-core</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
+            <!-- Hutool Crypto：AES、SM4、HMAC、Base64、Hex 等密码算法。 -->
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-crypto</artifactId>
                 <version>${hutool.version}</version>
             </dependency>
             <!-- Bouncy Castle：部分 JDK 上的 SM4 等密码算法 Provider。 -->

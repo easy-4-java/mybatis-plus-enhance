@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.core.conditions.AbstractWrapper;
  * 实体与 Wrapper 加解密处理器。
  *
  * <p>拦截器只负责编排调用，字段识别、值转换和异常策略由实现类负责。</p>
+ *
+ * @since 2.0.0
  */
 public interface DataEncryptionHandler {
 

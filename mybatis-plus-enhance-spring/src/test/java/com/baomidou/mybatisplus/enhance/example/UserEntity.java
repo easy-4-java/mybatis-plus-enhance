@@ -1,4 +1,4 @@
-package com.baomidou.mybatisplus.enhance.i18n;
+package com.baomidou.mybatisplus.enhance.example;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -18,13 +18,10 @@ public class UserEntity implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     private String name;
-    // 使用@TableSignatureField 注解
     @TableSignatureField(order = 1)
     private String mobile;
-    // 使用@TableSignatureField 注解
     @TableSignatureField(order = 2)
     private String email;
-    // 需要存储HMAC的字段用这个注解
     @TableSignatureField(stored = true)
     private String hamc;
 }

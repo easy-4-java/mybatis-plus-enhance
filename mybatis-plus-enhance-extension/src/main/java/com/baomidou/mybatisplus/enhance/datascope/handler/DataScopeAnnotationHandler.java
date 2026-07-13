@@ -65,8 +65,7 @@ public class DataScopeAnnotationHandler implements MultiDataPermissionHandler {
      */
     @Override
     public Expression getSqlSegment(Table table, Expression where, String mappedStatementId) {
-        Optional<DataScopePlus> resolved = annotationCache.computeIfAbsent(
-                mappedStatementId, this::resolveAnnotation);
+        Optional<DataScopePlus> resolved = annotationCache.computeIfAbsent(mappedStatementId, this::resolveAnnotation);
         if (!resolved.isPresent() || !resolved.get().enabled()) {
             return null;
         }

@@ -32,7 +32,7 @@ MyBatis-Plus 官方拦截器组合使用。
 | Maven        | 3.9.6+ |
 | MyBatis      | 3.5.19 |
 | MyBatis-Plus | 3.5.14 |
-| Hutool       | 5.8.40 |
+| Hutool Core + Crypto | 5.8.40 |
 
 完整的依赖选择、源码约束和发布验证规则见 [版本兼容性策略](COMPATIBILITY.md)。
 
@@ -158,9 +158,9 @@ public interface EncryptedFieldHandler {
 EncryptedFieldHandler handler = new DefaultEncryptedFieldHandler(
         objectMapper,
         SymmetricAlgorithmType.AES,
-        HmacAlgorithm.HmacSHA256,
-        Mode.CBC,
-        Padding.PKCS5Padding,
+        HmacType.HmacSHA256,
+        CipherMode.CBC,
+        CipherPadding.PKCS5Padding,
         new StaticCryptoKeyProvider(new CryptoKeyMaterial(
                 "customer-v1",
                 encryptionKeyBytes,
@@ -317,13 +317,13 @@ observation.addSink(item -> metrics.record(
         item.getMappedStatementId(), item.getElapsedMillis(), item.isSuccess()));
 ```
 
-也可通过 Java `ServiceLoader` 注册：
+接收器也可通过 Java `ServiceLoader` 自动发现。在**使用方自己的项目**中创建以下文件（框架自身不提供该文件）：
 
 ```text
-META-INF/services/com.baomidou.mybatisplus.enhance.observation.SqlObservationSink
+src/main/resources/META-INF/services/com.baomidou.mybatisplus.enhance.observation.SqlObservationSink
 ```
 
-文件内容为实现类的全限定名。接收器运行在 SQL 调用线程中，应快速、无阻塞；发送网络指标或审计事件时应使用有界队列，并定义丢弃、重试和降级策略。单个接收器的运行时异常会被隔离，不会改变
+文件内容为实现类的全限定名（每行一个）。接收器运行在 SQL 调用线程中，应快速、无阻塞；发送网络指标或审计事件时应使用有界队列，并定义丢弃、重试和降级策略。单个接收器的运行时异常会被隔离，不会改变
 SQL 结果。
 
 ### 超长 SQL

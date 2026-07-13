@@ -1,4 +1,4 @@
-package com.baomidou.mybatisplus.enhance.i18n;
+package com.baomidou.mybatisplus.enhance.example;
 
 import com.baomidou.mybatisplus.enhance.crypto.handler.DataSignatureHandler;
 import com.baomidou.mybatisplus.enhance.service.impl.EnhanceServiceImpl;
