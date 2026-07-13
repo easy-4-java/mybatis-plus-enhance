@@ -1,0 +1,44 @@
+name: Compatibility Matrix
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/1.0.x
+      - feature/2.0.x
+      - feature/3.0.x
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: ${{ matrix.ref }} / JDK ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ref: feature/1.0.x
+            java: '8'
+            distribution: temurin
+          - ref: feature/2.0.x
+            java: '17'
+            distribution: temurin
+          - ref: feature/3.0.x
+            java: '21'
+            distribution: temurin
+    steps:
+      - name: Checkout version line
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.ref }}
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ matrix.distribution }}
+          java-version: ${{ matrix.java }}
+          cache: maven
+      - name: Verify reactor
+        run: mvn --batch-mode --no-transfer-progress clean verify
