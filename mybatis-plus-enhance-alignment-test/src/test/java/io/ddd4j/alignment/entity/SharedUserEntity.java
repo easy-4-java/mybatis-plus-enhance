@@ -1,25 +1,30 @@
 package io.ddd4j.alignment.entity;
 
+import org.apache.ibatis.enhance.annotation.crypto.EncryptedField;
+import org.apache.ibatis.enhance.annotation.crypto.EncryptedTable;
+import org.apache.ibatis.enhance.annotation.crypto.TableSignature;
+import org.apache.ibatis.enhance.annotation.crypto.TableSignatureField;
+
 /**
- * 对齐测试用共享实体：不引用任何框架特定类，不携带任何 ORM/加密注解。
+ * 对齐测试用共享实体：两个框架共用同一套注解（统一路径后）。
  *
- * <p>字段含义（与 {@code mybatis-plus-enhance-spring} 的 {@code UserEntity} 对齐）：</p>
- * <ul>
- *   <li>id — 自增主键</li>
- *   <li>name — 业务字段（不加密、不签名）</li>
- *   <li>mobile — @EncryptedField（加密） + @TableSignatureField(order=1)</li>
- *   <li>email — 业务字段（不加密） + @TableSignatureField(order=2)</li>
- *   <li>hamc — @TableSignatureField(stored=true) 签名存储</li>
- * </ul>
- *
- * <p>注解信息通过 {@link io.ddd4j.alignment.spi.SharedEntityConfigurator}
- * 在两侧分别反射各自的注解类获取。</p>
+ * <p>注解路径统一为 org.apache.ibatis.enhance.annotation.crypto.*，
+ * Plus 版和 non-Plus 版都能正确识别。</p>
  */
+@EncryptedTable
+@TableSignature
 public class SharedUserEntity {
     private Long id;
     private String name;
+
+    @EncryptedField
+    @TableSignatureField(order = 1)
     private String mobile;
+
+    @TableSignatureField(order = 2)
     private String email;
+
+    @TableSignatureField(stored = true)
     private String hamc;
 
     public Long getId() { return id; }

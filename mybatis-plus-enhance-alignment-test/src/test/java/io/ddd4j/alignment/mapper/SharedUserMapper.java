@@ -24,6 +24,7 @@ public interface SharedUserMapper {
 
     List<SharedUserEntity> selectList();
 
+    @org.apache.ibatis.enhance.annotation.crypto.IgnoreEncrypted
     SharedUserEntity selectIgnoreDecryptById(Long id);
 
     List<SharedUserEntity> selectBatchIds(List<Long> idList);

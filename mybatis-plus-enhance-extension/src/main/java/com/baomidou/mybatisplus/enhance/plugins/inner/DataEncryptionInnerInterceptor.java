@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.core.conditions.update.Update;
 import com.baomidou.mybatisplus.core.toolkit.AnnotationUtils;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.baomidou.mybatisplus.core.toolkit.ObjectUtils;
-import org.apache.ibatis.enhance.annotation.crypto.IgnoreEncrypted;
 import com.baomidou.mybatisplus.enhance.crypto.handler.DataEncryptionHandler;
 import com.baomidou.mybatisplus.enhance.crypto.handler.DefaultDataEncryptionHandler;
 import com.baomidou.mybatisplus.enhance.crypto.handler.EncryptedFieldHandler;
@@ -21,6 +20,7 @@ import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.type.SimpleTypeRegistry;
+import org.apache.ibatis.enhance.annotation.crypto.IgnoreEncrypted;
 
 import java.lang.reflect.Method;
 import java.sql.SQLException;
