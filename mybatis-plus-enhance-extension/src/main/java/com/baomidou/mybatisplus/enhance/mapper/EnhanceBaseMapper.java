@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import org.apache.ibatis.annotations.Param;
-import org.apache.mybatis.enhance.annotation.crypto.IgnoreEncrypted;
+import org.apache.ibatis.enhance.annotation.crypto.IgnoreEncrypted;
 
 import java.io.Serializable;
 import java.util.Collection;

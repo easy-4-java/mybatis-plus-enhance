@@ -28,17 +28,6 @@
     </properties>
 
     <dependencies>
-        <!--
-            旧路径 annotation 桥接包（org.apache.mybatis.enhance.annotation.crypto.*）。
-            Plus 仓库源码使用此路径，通过独立 artifactId 避免与 3.0.x 版本冲突。
-            构建方式：见下方"如何重建 annotation-compat jar"注释。
-        -->
-        <dependency>
-            <groupId>io.github.hiwepy</groupId>
-            <artifactId>mybatis-enhance-annotation-compat</artifactId>
-            <version>2.0.x.20260630-SNAPSHOT</version>
-        </dependency>
-
         <!-- ========= mybatis-plus-enhance（Plus 版） ========= -->
         <dependency>
             <groupId>io.github.hiwepy</groupId>

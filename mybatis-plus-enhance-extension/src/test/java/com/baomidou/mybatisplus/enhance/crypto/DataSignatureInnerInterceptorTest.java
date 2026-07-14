@@ -10,7 +10,7 @@ import org.apache.ibatis.builder.StaticSqlSource;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.session.Configuration;
-import org.apache.mybatis.enhance.annotation.crypto.TableSignature;
+import org.apache.ibatis.enhance.annotation.crypto.TableSignature;
 import org.junit.After;
 import org.junit.Test;
 

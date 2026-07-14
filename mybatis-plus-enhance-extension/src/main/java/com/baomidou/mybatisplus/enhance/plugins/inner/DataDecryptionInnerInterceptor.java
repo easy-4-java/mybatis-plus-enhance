@@ -17,7 +17,7 @@ import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.type.SimpleTypeRegistry;
-import org.apache.mybatis.enhance.annotation.crypto.IgnoreEncrypted;
+import org.apache.ibatis.enhance.annotation.crypto.IgnoreEncrypted;
 
 import java.lang.reflect.Method;
 import java.sql.SQLException;

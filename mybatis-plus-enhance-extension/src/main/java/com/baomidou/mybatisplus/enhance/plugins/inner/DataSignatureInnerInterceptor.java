@@ -26,7 +26,7 @@ import org.apache.ibatis.type.SimpleTypeRegistry;
 
 import java.sql.SQLException;
 import java.util.*;
-import org.apache.mybatis.enhance.annotation.crypto.TableSignature;
+import org.apache.ibatis.enhance.annotation.crypto.TableSignature;
 
 /**
  * 表级数据签名与验签拦截器。

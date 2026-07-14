@@ -5,10 +5,10 @@ import org.apache.ibatis.builder.StaticSqlSource;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.session.Configuration;
-import org.apache.mybatis.enhance.annotation.i18n.I18nColumn;
-import org.apache.mybatis.enhance.annotation.i18n.I18nLocale;
-import org.apache.mybatis.enhance.annotation.i18n.I18nMapper;
-import org.apache.mybatis.enhance.annotation.i18n.LocaleEnum;
+import org.apache.ibatis.enhance.annotation.i18n.I18nColumn;
+import org.apache.ibatis.enhance.annotation.i18n.I18nLocale;
+import org.apache.ibatis.enhance.annotation.i18n.I18nMapper;
+import org.apache.ibatis.enhance.annotation.i18n.LocaleEnum;
 import org.junit.Assert;
 import org.junit.Test;
 
