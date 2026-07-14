@@ -2,12 +2,16 @@ package io.ddd4j.alignment;
 
 import cn.hutool.crypto.Mode;
 import cn.hutool.crypto.Padding;
-import cn.hutool.crypto.digest.HmacAlgorithm;
 import com.baomidou.mybatisplus.enhance.crypto.enums.CipherMode;
 import com.baomidou.mybatisplus.enhance.crypto.enums.CipherPadding;
 import com.baomidou.mybatisplus.enhance.crypto.enums.HmacType;
 import com.baomidou.mybatisplus.enhance.crypto.enums.SymmetricAlgorithmType;
+import com.baomidou.mybatisplus.enhance.crypto.handler.DefaultEncryptedFieldHandler;
+import com.baomidou.mybatisplus.enhance.crypto.key.CryptoKeyMaterial;
+import com.baomidou.mybatisplus.enhance.crypto.key.StaticCryptoKeyProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cn.hutool.crypto.digest.HmacAlgorithm;
+import org.apache.ibatis.enhance.crypto.handler.EnvelopeEncryptedFieldHandler;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -18,161 +22,142 @@ import static org.junit.Assert.*;
 /**
  * 对齐验证测试：mybatis-plus-enhance 与 mybatis-enhance 的加密行为一致性。
  *
- * <p>绕过注解扫描（两个版本的 annotation 包路径不同，无法共存于同一 classpath），
- * 直接测试 handler 级别的 encrypt / decrypt / sign API，验证：
- * <ol>
- *   <li>相同明文 + 相同密钥 → 两个框架都能正确加密</li>
- *   <li>两个框架的密文可以互相解密（跨框架互操作性）</li>
- *   <li>两个框架的签名结果语义一致</li>
- * </ol>
+ * <p><strong>真对比：两侧使用相同 key + 相同 plaintext，各自加密并解密，比对解密结果。</strong></p>
+ *
+ * <p>由于两端 IV 策略不同（Plus 端用 CryptoKeyMaterial 派生随机 IV，non-Plus 端可显式传入），
+ * 密文本身不可直接对比（这由 EnvelopeCompatibilityTest 解决）。本测试对比的是：
+ * <strong>两端各自加密相同 plaintext，都能解密回原文</strong>。</p>
  *
  * @author <a href="https://github.com/hiwepy">wandl</a>
  * @since 3.0.x
  */
 public class AlignmentTest {
 
-    private static final byte[] KEY = bytes('e', 32);   // AES-256 加密密钥
-    private static final byte[] AUTH = bytes('a', 32);  // HMAC 认证密钥（Plus 版要求 ≥32 字节且 ≠ KEY）
-    private static final byte[] IV = bytes('i', 16);    // 16-byte IV（CBC 模式必需）
+    private static final byte[] ENC_KEY = bytes('e', 32);
+    private static final byte[] AUTH_KEY = bytes('a', 32);
+    private static final byte[] FIXED_IV = bytes('i', 16);  // 16-byte IV
 
-    private com.baomidou.mybatisplus.enhance.crypto.handler.DefaultEncryptedFieldHandler plusHandler;
-    private org.apache.ibatis.enhance.crypto.handler.DefaultEncryptedFieldHandler enhanceHandler;
+    private DefaultEncryptedFieldHandler plusHandler;
+    private EnvelopeEncryptedFieldHandler enhanceHandler;
 
     @Before
-    public void setUp() {
-        // Plus 版 handler（CipherMode/CipherPadding + CryptoKeyProvider）
-        plusHandler = new com.baomidou.mybatisplus.enhance.crypto.handler.DefaultEncryptedFieldHandler(
-                new ObjectMapper(),
+    public void setUp() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        // Plus 版：使用 StaticCryptoKeyProvider 注入 CryptoKeyMaterial（用 Plus 版的 HmacType）
+        CryptoKeyMaterial plusMaterial = new CryptoKeyMaterial("v1", ENC_KEY, AUTH_KEY);
+        plusHandler = new DefaultEncryptedFieldHandler(
+                objectMapper,
                 SymmetricAlgorithmType.AES,
                 HmacType.HmacSHA256,
                 CipherMode.CBC,
                 CipherPadding.PKCS5Padding,
-                new com.baomidou.mybatisplus.enhance.crypto.key.StaticCryptoKeyProvider(
-                        new com.baomidou.mybatisplus.enhance.crypto.key.CryptoKeyMaterial("test", KEY, AUTH)));
+                new StaticCryptoKeyProvider(plusMaterial));
 
-        // non-Plus 版 handler（Hutool Mode/Padding + Base64 key + Base64 iv）
-        enhanceHandler = new org.apache.ibatis.enhance.crypto.handler.DefaultEncryptedFieldHandler(
-                new ObjectMapper(),
-                org.apache.ibatis.enhance.crypto.enums.SymmetricAlgorithmType.AES,
+        // non-Plus 版：使用 EnvelopeEncryptedFieldHandler（通过反射绕过 CryptoKeyMaterial 类型问题）
+        Class<?> matClass = Class.forName("org.apache.ibatis.enhance.crypto.key.CryptoKeyMaterial");
+        Object nonPlusMaterial = matClass
+                .getConstructor(String.class, byte[].class, byte[].class)
+                .newInstance("v1", ENC_KEY, AUTH_KEY);
+        Class<?> ctorClass = Class.forName("org.apache.ibatis.enhance.crypto.handler.EnvelopeEncryptedFieldHandler");
+        Class<?> symClass = Class.forName("org.apache.ibatis.enhance.crypto.enums.SymmetricAlgorithmType");
+        java.lang.reflect.Constructor<?> ctor = ctorClass.getConstructor(
+                ObjectMapper.class, symClass,
+                HmacAlgorithm.class, Mode.class, Padding.class, matClass);
+        ctor.setAccessible(true);
+        enhanceHandler = (EnvelopeEncryptedFieldHandler) ctor.newInstance(
+                objectMapper,
+                symClass.getField("AES").get(null),
                 HmacAlgorithm.HmacSHA256,
-                Mode.CBC,
-                Padding.PKCS5Padding,
-                java.util.Base64.getEncoder().encodeToString(KEY),
-                java.util.Base64.getEncoder().encodeToString(IV));
+                Mode.CBC, Padding.PKCS5Padding,
+                nonPlusMaterial);
     }
 
     /**
-     * 用例 1：相同明文 → 两个框架都能正确加密（密文 ≠ 明文）。
+     * 用例 1：相同 plaintext → 两端各自加密 → 各自解密 → 两端解密结果一致。
+     *
+     * <p>真对比：两端独立执行完整加密/解密流程，比对解密后的明文是否一致。</p>
      */
     @Test
-    public void shouldBothEncryptToNonPlaintext() {
+    public void shouldBothDecryptToIdenticalPlaintext() {
         String plaintext = "13800138000";
 
+        // Plus 端
         String plusCipher = plusHandler.encrypt(plaintext);
-        String enhanceCipher = enhanceHandler.encrypt(plaintext);
-
-        assertNotNull("Plus 版加密结果不应为空", plusCipher);
-        assertNotNull("non-Plus 版加密结果不应为空", enhanceCipher);
-        assertNotEquals("Plus 版密文不应等于明文", plaintext, plusCipher);
-        assertNotEquals("non-Plus 版密文不应等于明文", plaintext, enhanceCipher);
-    }
-
-    /**
-     * 用例 2：两个框架都能正确解密自己的密文。
-     */
-    @Test
-    public void shouldBothDecryptOwnCiphertext() {
-        String plaintext = "13800138000";
-
-        String plusCipher = plusHandler.encrypt(plaintext);
-        String enhanceCipher = enhanceHandler.encrypt(plaintext);
-
-        // 解密自己的密文
         String plusDecrypted = plusHandler.decrypt(plusCipher, String.class);
+
+        // non-Plus 端
+        String enhanceCipher = enhanceHandler.encrypt(plaintext);
         String enhanceDecrypted = enhanceHandler.decrypt(enhanceCipher, String.class);
 
-        assertEquals("Plus 版解密应得到明文", plaintext, plusDecrypted);
-        assertEquals("non-Plus 版解密应得到明文", plaintext, enhanceDecrypted);
+        // 各自能解密回原文
+        assertEquals("Plus 端解密结果", plaintext, plusDecrypted);
+        assertEquals("non-Plus 端解密结果", plaintext, enhanceDecrypted);
+
+        // 真对比：两端解密结果应一致
+        assertEquals("Plus vs non-Plus 解密结果应一致", plusDecrypted, enhanceDecrypted);
     }
 
     /**
-     * 用例 3（金标准）：跨框架解密可行性测试。
-     *
-     * <p>Plus 版的 IV 由 {@code CryptoKeyMaterial} 内部派生（不显式传入），
-     * non-Plus 版的 IV 由外部显式传入。如果两个 IV 不一致，跨框架解密会失败——
-     * 这是**预期的真实差异**，记录在测试中。</p>
-     *
-     * <p>如果未来两个框架的 IV 策略统一（例如都从 key material 派生），
-     * 此测试应改为 assertEquals 断言跨框架解密成功。</p>
+     * 用例 2：真跨框架对比 — Plus 加密 → non-Plus 解密。
      */
     @Test
-    public void shouldDocumentCrossFrameworkDecryptionBehavior() {
+    public void shouldPlusEncryptAndEnhanceDecrypt() {
         String plaintext = "13800138000";
-
-        // Plus 版加密
         String plusCipher = plusHandler.encrypt(plaintext);
-
-        // 尝试跨框架解密
-        boolean crossOk = false;
-        try {
-            String crossDecrypted = enhanceHandler.decrypt(plusCipher, String.class);
-            crossOk = plaintext.equals(crossDecrypted);
-        } catch (Exception e) {
-            // AES decrypt failed — 说明两个框架的 IV/密钥材料不一致
-            // 这是预期行为：Plus 版 IV 由 CryptoKeyMaterial 派生，non-Plus 版 IV 显式传入
-        }
-
-        // 记录跨框架兼容性状态（不断言，只记录）
-        // 如果 crossOk == true，说明两个框架的密文完全兼容
-        // 如果 crossOk == false，说明密文格式不兼容（IV 差异），但各自加密/解密正常
-        System.out.println("跨框架解密结果: " + (crossOk ? "成功（密文完全兼容）" : "失败（IV 策略不同，各自加密/解密正常）"));
-
-        // 至少验证：各自加密/解密是正常的
-        String plusDecrypted = plusHandler.decrypt(plusCipher, String.class);
-        assertEquals("Plus 版应能解密自己的密文", plaintext, plusDecrypted);
+        String enhanceDecrypted = enhanceHandler.decrypt(plusCipher, String.class);
+        assertEquals("Plus 加密 → non-Plus 解密 = 原文", plaintext, enhanceDecrypted);
     }
 
     /**
-     * 用例 4：两个框架对相同明文的加密结果应该不同（因为 IV/盐可能不同）。
-     *
-     * <p>注意：如果两个框架使用相同的 IV，密文应该相同。
-     * 这里验证的是"至少密文格式合法"（长度合理、不是明文）。</p>
+     * 用例 3：真跨框架对比 — non-Plus 加密 → Plus 解密。
      */
     @Test
-    public void shouldProduceValidCiphertextFormat() {
+    public void shouldEnhanceEncryptAndPlusDecrypt() {
+        String plaintext = "13800002222";
+        String enhanceCipher = enhanceHandler.encrypt(plaintext);
+        String plusDecrypted = plusHandler.decrypt(enhanceCipher, String.class);
+        assertEquals("non-Plus 加密 → Plus 解密 = 原文", plaintext, plusDecrypted);
+    }
+
+    /**
+     * 用例 4：密文格式检查 — 两端都以 MPE1. 信封格式输出。
+     */
+    @Test
+    public void shouldBothProduceMPE1EnvelopeFormat() {
         String plaintext = "13800138000";
 
         String plusCipher = plusHandler.encrypt(plaintext);
         String enhanceCipher = enhanceHandler.encrypt(plaintext);
 
-        // 密文长度应大于明文（AES-CBC + Base64 会膨胀）
-        assertTrue("Plus 版密文长度应大于明文", plusCipher.length() > plaintext.length());
-        assertTrue("non-Plus 版密文长度应大于明文", enhanceCipher.length() > plaintext.length());
+        assertTrue("Plus 密文应以 MPE1. 开头", plusCipher.startsWith("MPE1."));
+        assertTrue("non-Plus 密文应以 MPE1. 开头", enhanceCipher.startsWith("MPE1."));
+
+        // 密文段数：8 段
+        assertEquals("Plus 密文应有 8 段", 8, plusCipher.split("\\.").length);
+        assertEquals("non-Plus 密文应有 8 段", 8, enhanceCipher.split("\\.").length);
     }
 
     /**
-     * 用例 5：重复加密 → 解密一致性。
+     * 用例 5：HMAC 签名语义一致性 — 两端对同一明文签名，都能产生有效的 HMAC。
      *
-     * <p>同一个框架对同一明文加密两次，再分别解密，结果应一致。</p>
+     * <p>注：两端 HMAC 格式不同（Plus 端用 MPEH1 3 段信封，non-Plus 端用 1 段纯 Base64），
+     * 是设计差异。本测试只验证语义正确性，不验证字节级一致。</p>
      */
     @Test
-    public void shouldProduceRepeatableEncryption() {
-        String plaintext = "13800138000";
+    public void shouldBothProduceValidHMACSignature() {
+        String data = "13800138000|user@example.com";
 
-        // 同一框架加密两次
-        String plusCipher1 = plusHandler.encrypt(plaintext);
-        String plusCipher2 = plusHandler.encrypt(plaintext);
+        String plusHmac = plusHandler.hmac(data);
+        String enhanceHmac = enhanceHandler.hmac(data);
 
-        // 解密两次结果
-        String plusPlain1 = plusHandler.decrypt(plusCipher1, String.class);
-        String plusPlain2 = plusHandler.decrypt(plusCipher2, String.class);
-
-        assertEquals("Plus 版解密结果 1", plaintext, plusPlain1);
-        assertEquals("Plus 版解密结果 2", plaintext, plusPlain2);
-
-        String enhanceCipher1 = enhanceHandler.encrypt(plaintext);
-        String enhancePlain1 = enhanceHandler.decrypt(enhanceCipher1, String.class);
-        assertEquals("non-Plus 版解密结果", plaintext, enhancePlain1);
+        assertNotNull(plusHmac);
+        assertNotNull(enhanceHmac);
+        assertFalse(plusHmac.equals(data));
+        assertFalse(enhanceHmac.equals(data));
+        // 两端都使用 Base64 URL-safe 编码
+        assertFalse("Plus HMAC 不应包含 + 或 /", plusHmac.contains("+") || plusHmac.contains("/"));
+        assertFalse("non-Plus HMAC 不应包含 + 或 /", enhanceHmac.contains("+") || enhanceHmac.contains("/"));
     }
 
     // ========================= 工具 =========================
