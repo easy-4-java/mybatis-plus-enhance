@@ -65,7 +65,7 @@
         
         <allow.spring.dependencies>false</allow.spring.dependencies>
         <bcprov.version>1.81</bcprov.version>
-        <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
+        <maven-central-publishing-plugin.version>0.11.0</maven-central-publishing-plugin.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-lang.version>2.6</commons-lang.version>
         <easy4j-mybatis-enhance.version>2.0.x.20260630-SNAPSHOT</easy4j-mybatis-enhance.version>
@@ -480,7 +480,7 @@
                     
                     <groupId>org.sonatype.central</groupId>
                     <artifactId>central-publishing-maven-plugin</artifactId>
-                    <version>${central-publishing-maven-plugin.version}</version>
+                    <version>${maven-central-publishing-plugin.version}</version>
                 </plugin>
                 
                 <plugin>
