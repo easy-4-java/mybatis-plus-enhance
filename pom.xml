@@ -348,9 +348,6 @@
                         <encoding>${project.build.sourceEncoding}</encoding>
                         
                         <parameters>true</parameters>
-                        <testExcludes>
-                            <testExclude>**/*.java</testExclude>
-                        </testExcludes>
                         <annotationProcessorPaths>
                             <path>
                                 <groupId>org.projectlombok</groupId>
