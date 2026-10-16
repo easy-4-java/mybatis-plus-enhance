@@ -5,7 +5,7 @@
     <artifactId>mybatis-plus-enhance</artifactId>
     <name>${project.groupId}:${project.artifactId}</name>
     <url>https://github.com/easy-4-java/${project.artifactId}</url>
-    <version>2.0.x.20260630-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
     <description>MyBatis-Plus 模块化增强框架</description>
     
