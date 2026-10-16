@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.enhance.service.impl.EnhanceServiceImpl;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.executor.result.DefaultResultContext;
 import org.apache.ibatis.session.ResultHandler;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
 import java.util.Collections;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Signed Service API 安全语义回归测试。
