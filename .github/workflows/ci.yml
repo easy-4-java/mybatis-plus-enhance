@@ -4,7 +4,7 @@
 #   - push / pull_request on the feature/3.0.x branch
 #   - manual workflow_dispatch
 #
-# Runs `mvn -B clean verify` which includes the JaCoCo coverage gate
+# Runs the project's Maven 4 wrapper for its 4.1.0 POM and JaCoCo coverage gate
 # (90% line coverage, haltOnFailure=false) configured in the POM.
 name: CI
 
@@ -47,9 +47,8 @@ jobs:
               "https://github.com/easy-4-java/${dependency}.git" \
               "${dependency_root}/${dependency}"
             for attempt in 1 2 3; do
-              if mvn -B --no-transfer-progress \
-                -f "${dependency_root}/${dependency}/pom.xml" \
-                -DskipTests -Djacoco.skip=true -Dgpg.skip=true install; then
+              if (cd "${dependency_root}/${dependency}" && sh ./mvnw -B --no-transfer-progress \
+                -DskipTests -Djacoco.skip=true -Dgpg.skip=true install); then
                 break
               fi
               if [[ "${attempt}" -eq 3 ]]; then
@@ -60,7 +59,7 @@ jobs:
           done
 
       - name: Build and verify with JaCoCo coverage gate
-        run: mvn -B --no-transfer-progress clean verify
+        run: sh ./mvnw -B --no-transfer-progress clean verify
 
       - name: Upload JaCoCo coverage report
         if: always()
