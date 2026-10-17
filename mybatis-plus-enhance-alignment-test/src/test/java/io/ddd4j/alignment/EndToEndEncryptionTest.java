@@ -19,6 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -203,7 +204,7 @@ public class EndToEndEncryptionTest {
         }
         List<SharedUserEntity> pList;
         try (SqlSession s = plusSide.openSession()) {
-            pList = plusSide.mapper(s).selectBatchIds(List.of(pId1, pId2));
+            pList = plusSide.mapper(s).selectBatchIds(Arrays.asList(pId1, pId2));
         }
 
         // non-Plus 端插入 2 条
@@ -221,7 +222,7 @@ public class EndToEndEncryptionTest {
         }
         List<SharedUserEntity> eList;
         try (SqlSession s = enhanceSide.openSession()) {
-            eList = enhanceSide.mapper(s).selectBatchIds(List.of(eId1, eId2));
+            eList = enhanceSide.mapper(s).selectBatchIds(Arrays.asList(eId1, eId2));
         }
 
         // 比对
