@@ -284,6 +284,11 @@
                 <artifactId>junit-jupiter-params</artifactId>
                 <version>${junit-jupiter.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${junit-jupiter.version}</version>
+            </dependency>
             
             <dependency>
                 <groupId>org.assertj</groupId>
@@ -304,6 +309,11 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
         
@@ -553,6 +563,10 @@
             </plugins>
         </pluginManagement>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
             
             <plugin>
                 

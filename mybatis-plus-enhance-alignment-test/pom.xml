@@ -17,7 +17,7 @@
     </description>
 
     <properties>
-        <mybatis-enhance.version>3.0.x.20260630-SNAPSHOT</mybatis-enhance.version>
+        <mybatis-enhance.version>${revision}</mybatis-enhance.version>
         <sqlite-jdbc.version>3.46.1.3</sqlite-jdbc.version>
         <!-- 本模块的 Service 集成测试需要 Spring 容器支持 @Service / @Autowired -->
         <allow.spring.dependencies>true</allow.spring.dependencies>
