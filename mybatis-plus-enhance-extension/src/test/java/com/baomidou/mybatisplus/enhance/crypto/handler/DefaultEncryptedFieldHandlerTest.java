@@ -20,6 +20,53 @@ import static org.junit.Assert.*;
  */
 public class DefaultEncryptedFieldHandlerTest {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    /** Generated with bcprov-jdk18on 1.81, Hutool crypto, JDK 21 and Jackson 2.
+     * SM4/CBC/PKCS5Padding; keyId bc181; encryption key is 16 ASCII '1' bytes,
+     * HMAC-SHA256 key is 32 ASCII 'a' bytes; IV is bytes 00 through 0f.
+     * Plaintext is the Jackson JSON string for SM4历史数据.
+     */
+    private static final String BC181_SM4_CIPHERTEXT = "MPE1.YmMxODE.SM4.CBC.PKCS5Padding.AAECAwQFBgcICQoLDA0ODw.k1HiLlv7mftE7WRvyc2QDKq_6daF4xEby7RRakCKtI4.h8nD3t50HRaTAvqWmRUzqBanLiifInpaA1O8wlNevn4";
+
+    @Test
+    public void shouldRoundTripSm4Ciphertext() {
+        DefaultEncryptedFieldHandler handler = createSm4Handler();
+        String ciphertext = handler.encrypt("SM4敏感数据");
+
+        assertTrue(ciphertext.startsWith("MPE1."));
+        assertEquals("SM4敏感数据", handler.decrypt(ciphertext, String.class));
+    }
+
+    @Test
+    public void shouldRejectTamperedSm4Ciphertext() {
+        DefaultEncryptedFieldHandler handler = createSm4Handler();
+        String[] parts = handler.encrypt("SM4敏感数据").split("\\.", -1);
+        byte[] ciphertext = Base64.getUrlDecoder().decode(parts[6]);
+        ciphertext[0] ^= 1;
+        parts[6] = Base64.getUrlEncoder().withoutPadding().encodeToString(ciphertext);
+        try {
+            handler.decrypt(String.join(".", parts), String.class);
+            fail("Expected SM4 envelope authentication to reject ciphertext tampering");
+        } catch (RuntimeException expected) {
+            assertTrue(expected.getMessage().contains("decrypt failed"));
+        }
+    }
+
+    @Test
+    public void shouldDecryptBc181Sm4Ciphertext() {
+        assertEquals("SM4历史数据", createSm4Handler().decrypt(BC181_SM4_CIPHERTEXT, String.class));
+    }
+
+    private DefaultEncryptedFieldHandler createSm4Handler() {
+        return new DefaultEncryptedFieldHandler(
+                MAPPER, SymmetricAlgorithmType.SM4, HmacType.HmacSHA256,
+                CipherMode.CBC, CipherPadding.PKCS5Padding,
+                new StaticCryptoKeyProvider(key("bc181", '1', 'a')));
+    }
+
+
+
     @Test
     public void shouldRoundTripVersionedCiphertextWithRandomIv() {
         DefaultEncryptedFieldHandler handler = createHandler(key("v1", '1', 'a'));
