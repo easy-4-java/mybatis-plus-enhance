@@ -82,7 +82,7 @@
         <easy4j-mybatis-enhance.version>1.0.x.20260630-SNAPSHOT</easy4j-mybatis-enhance.version>
         <h2.version>2.2.224</h2.version>
         <hutool.version>5.8.40</hutool.version>
-        <jackson-bom.version>2.18.9</jackson-bom.version>
+        <jackson-bom.version>2.18.12</jackson-bom.version>
         <javax-annotation.version>1.3.2</javax-annotation.version>
         <jsqlparser.version>4.9</jsqlparser.version>
         <assertj.version>3.27.3</assertj.version>
@@ -420,7 +420,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
                     <configuration>
-                        <argLine>-Dfile.encoding=${project.build.sourceEncoding}</argLine>
+                        <argLine>@{argLine} -Dfile.encoding=${project.build.sourceEncoding}</argLine>
                     </configuration>
                 </plugin>
                 
