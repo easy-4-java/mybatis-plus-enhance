@@ -69,7 +69,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Dependency versions -->
         <allow.spring.dependencies>false</allow.spring.dependencies>
-        <bcprov.version>1.81</bcprov.version>
+        <bcprov.version>1.85</bcprov.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-lang.version>2.6</commons-lang.version>
         <easy4j-mybatis-enhance.version>2.0.x.20260630-SNAPSHOT</easy4j-mybatis-enhance.version>
