@@ -34,6 +34,26 @@ public class DefaultEncryptedFieldHandlerTest {
     }
 
     @Test
+    public void shouldSerializeEncryptedObjectAndRestoreRequestedType() {
+        DefaultEncryptedFieldHandler handler = createHandler(key("v1", '1', 'a'));
+        SecretRecord original = new SecretRecord();
+        original.name = "敏感字段";
+        original.count = 42;
+
+        String ciphertext = handler.encrypt(original);
+        SecretRecord restored = handler.decrypt(ciphertext, SecretRecord.class);
+
+        assertTrue(ciphertext.startsWith("MPE1."));
+        assertEquals(original.name, restored.name);
+        assertEquals(original.count, restored.count);
+    }
+
+    public static class SecretRecord {
+        public String name;
+        public int count;
+    }
+
+    @Test
     public void shouldRejectTamperedCiphertextBeforeDecrypt() {
         DefaultEncryptedFieldHandler handler = createHandler(key("v1", '1', 'a'));
         String encrypted = handler.encrypt("sensitive-data");
