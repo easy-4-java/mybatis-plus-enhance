@@ -13,6 +13,7 @@ import com.baomidou.mybatisplus.enhance.crypto.enums.SymmetricAlgorithmType;
 import com.baomidou.mybatisplus.enhance.crypto.key.CryptoKeyMaterial;
 import com.baomidou.mybatisplus.enhance.crypto.key.CryptoKeyProvider;
 import com.baomidou.mybatisplus.enhance.util.SymmetricCryptoUtil;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,10 @@ public class DefaultEncryptedFieldHandler implements EncryptedFieldHandler {
 
     @Getter
     private final ObjectMapper objectMapper;
+    /** 延续 Jackson 2 默认 POJO 顺序的签名序列化器，不修改调用方配置。 */
+    private final ObjectMapper signatureObjectMapper;
+    /** 用于兼容旧 Jackson 3 字母排序对象签名的序列化器。 */
+    private final ObjectMapper alphabeticSignatureObjectMapper;
     private final SymmetricAlgorithmType algorithmType;
     private final HmacAlgorithm hmacAlgorithm;
     private final Mode mode;
@@ -77,6 +82,8 @@ public class DefaultEncryptedFieldHandler implements EncryptedFieldHandler {
                                  CryptoKeyProvider keyProvider,
                                  SecureRandom secureRandom) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        this.signatureObjectMapper = objectMapper.copy().configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, false);
+        this.alphabeticSignatureObjectMapper = objectMapper.copy().configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
         this.algorithmType = requireSafeAlgorithm(algorithmType);
         this.hmacAlgorithm = Objects.requireNonNull(hmacType, "hmacType must not be null").toHutoolAlgorithm();
         this.mode = Objects.requireNonNull(cipherMode, "cipherMode must not be null").toHutoolMode();
@@ -120,6 +127,8 @@ public class DefaultEncryptedFieldHandler implements EncryptedFieldHandler {
                                  CryptoKeyProvider keyProvider,
                                  SecureRandom secureRandom) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        this.signatureObjectMapper = objectMapper.copy().configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, false);
+        this.alphabeticSignatureObjectMapper = objectMapper.copy().configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
         this.algorithmType = requireSafeAlgorithm(algorithmType);
         this.hmacAlgorithm = Objects.requireNonNull(hmacAlgorithm, "hmacAlgorithm must not be null");
         this.mode = Objects.requireNonNull(mode, "mode must not be null");
@@ -194,7 +203,7 @@ public class DefaultEncryptedFieldHandler implements EncryptedFieldHandler {
             CryptoKeyMaterial key = keyProvider.currentKey();
             validateKey(key);
             return HMAC_VERSION + '.' + encode(key.getKeyId().getBytes(StandardCharsets.UTF_8)) + '.'
-                    + encode(mac(key, objectMapper.writeValueAsBytes(value)));
+                    + encode(mac(key, signatureObjectMapper.writeValueAsBytes(value)));
         } catch (Exception exception) {
             log.error("HMAC digest failed");
             throw ExceptionUtils.mpe("HMAC digest failed", exception);
@@ -216,7 +225,13 @@ public class DefaultEncryptedFieldHandler implements EncryptedFieldHandler {
             if (Objects.isNull(key)) {
                 return false;
             }
-            return MessageDigest.isEqual(mac(key, objectMapper.writeValueAsBytes(value)), decode(parts[2]));
+            byte[] signatureBytes = decode(parts[2]);
+            if (MessageDigest.isEqual(mac(key, signatureObjectMapper.writeValueAsBytes(value)), signatureBytes)) {
+                return true;
+            }
+            // 兼容 Jackson 3 默认字母排序生成的历史对象签名，仍使用携带的 keyId 校验。
+            return MessageDigest.isEqual(
+                    mac(key, alphabeticSignatureObjectMapper.writeValueAsBytes(value)), signatureBytes);
         } catch (Exception exception) {
             return false;
         }
