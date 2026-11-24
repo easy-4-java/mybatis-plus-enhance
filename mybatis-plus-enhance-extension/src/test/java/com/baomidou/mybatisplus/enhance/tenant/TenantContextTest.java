@@ -5,12 +5,17 @@ import com.baomidou.mybatisplus.enhance.context.TenantContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Unit tests for {@link TenantContext}.
@@ -70,8 +75,56 @@ class TenantContextTest {
         context.setCurrentTenantId(1001L);
         TenantContext.Scope scope = context.open(2002L);
         scope.close();
-        scope.close();
         assertThat(context.getCurrentTenantId()).isEqualTo(1001L);
+        context.setCurrentTenantId(3003L);
+        scope.close();
+        assertThat(context.getCurrentTenantId()).isEqualTo(3003L);
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"owner-original"})
+    void shouldRejectForeignCloseWithoutChangingTenantsAndAllowOwnerToRestore(String originalTenant) throws Exception {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        context.setCurrentTenantId(originalTenant);
+        try (TenantContext.Scope scope = context.open("owner-temporary")) {
+            executor.submit(() -> {
+                context.setCurrentTenantId("worker-tenant");
+                try {
+                    assertThatThrownBy(scope::close).isInstanceOf(IllegalStateException.class);
+                    assertThat(context.getCurrentTenantId()).isEqualTo("worker-tenant");
+                } finally {
+                    context.clear();
+                }
+            }).get(10, TimeUnit.SECONDS);
+            assertThat(context.getCurrentTenantId()).isEqualTo("owner-temporary");
+        } finally {
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+        }
+        assertThat(context.getCurrentTenantId()).isEqualTo(originalTenant);
+    }
+
+    @Test
+    void shouldRejectForeignCloseEvenAfterOwnerClosedScope() throws Exception {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        TenantContext.Scope scope = context.open("temporary");
+        scope.close();
+        try {
+            executor.submit(() -> {
+                context.setCurrentTenantId("worker-tenant");
+                try {
+                    assertThatThrownBy(scope::close).isInstanceOf(IllegalStateException.class);
+                    assertThat(context.getCurrentTenantId()).isEqualTo("worker-tenant");
+                } finally {
+                    context.clear();
+                }
+            }).get(10, TimeUnit.SECONDS);
+            assertThat(context.getCurrentTenantId()).isNull();
+        } finally {
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+        }
     }
 
     @Test
