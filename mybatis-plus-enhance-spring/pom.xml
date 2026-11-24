@@ -31,12 +31,12 @@
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-core</artifactId>
         </dependency>
-        <!-- MyBatis-Plus Extension：IService、ServiceImpl 和 SqlHelper。 -->
+        <!-- MyBatis-Plus Extension：SqlHelper 等扩展工具。 -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-extension</artifactId>
         </dependency>
-        <!-- MyBatis-Plus Spring：3.5.14 中 Service 实现依赖的 Spring 桥接模块。 -->
+        <!-- MyBatis-Plus Spring：提供 spring.service 包下的 IService 和 ServiceImpl。 -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring</artifactId>

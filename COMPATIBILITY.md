@@ -30,7 +30,7 @@
 | Java | 8 | `1.0.x` 的最低编译与运行环境 |
 | Spring Framework | 5.3.39 | Spring 5.3 是支持 JDK 8 的最后一个主版本系列 |
 | MyBatis | 3.5.19 | 保持 Java 8 兼容的稳定版本 |
-| MyBatis-Plus | 3.5.14 | 当前增强实现的验证基线 |
+| MyBatis-Plus | 3.5.17 | 当前增强实现的验证基线 |
 | JSqlParser | 4.9 | 与 MyBatis-Plus 的 JDK 8 专用适配包配套 |
 | Annotation API | `javax.annotation-api` 1.3.2 | 与 JDK 8、Spring 5.3 的 `javax` 技术栈一致 |
 
@@ -60,6 +60,19 @@
 升级需先让读端具备兼容验签能力；未升级的 Jackson 3 读端仍可能拒绝新生成的非字母排序对象签名。
 `HmacBranchCompatibilityTest` 使用修复前真实生成的两组固定签名验证生成、历史验签、嵌套对象、
 篡改拒绝、密钥轮换、调用方配置隔离以及新旧构造器的一致行为。
+
+## Spring Service 依赖适配
+
+本版本线的 MyBatis-Plus 版本与 DDD4J 对应版本线一致。增强 Service 使用
+`com.baomidou.mybatisplus.spring.service.IService` 和
+`com.baomidou.mybatisplus.spring.service.impl.ServiceImpl`，由既有 `mybatis-plus-spring` 依赖提供。
+增强组件自身的 Service 包名、签名查询和事务方法契约保持不变。
+批量插入、更新及保存或更新的回调返回实际写入结果，兼容新版 BiFunction 回调，
+并保留写入后收集主键、批处理成功后补签的顺序。
+
+升级时应统一应用中的 MyBatis-Plus 组件版本，并重新编译 Service 消费者；本版本不再支持
+以 MyBatis-Plus 3.5.14 替换上述依赖。core/extension 继续保持 Spring 无关。
+验证必须包括完整 reactor 的 `clean verify`、`SignedServiceContractTest` 和独立 `alignment-test`。
 
 ## 发布前验证
 

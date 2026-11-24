@@ -8,7 +8,7 @@ import com.baomidou.mybatisplus.enhance.mapper.EnhanceBaseMapper;
 import com.baomidou.mybatisplus.enhance.context.SignatureUpdateContext;
 import com.baomidou.mybatisplus.enhance.crypto.enums.SignatureUpdateStrategy;
 import com.baomidou.mybatisplus.enhance.util.TableFieldHelper;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import org.apache.ibatis.session.ResultHandler;
 import org.springframework.transaction.annotation.Transactional;
