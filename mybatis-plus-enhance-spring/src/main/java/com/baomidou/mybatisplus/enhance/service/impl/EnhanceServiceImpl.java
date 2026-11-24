@@ -15,7 +15,7 @@ import com.baomidou.mybatisplus.enhance.crypto.enums.SignatureUpdateStrategy;
 import com.baomidou.mybatisplus.enhance.mapper.EnhanceBaseMapper;
 import com.baomidou.mybatisplus.enhance.service.IEnhanceService;
 import com.baomidou.mybatisplus.enhance.util.TableFieldHelper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import lombok.Getter;
 import org.apache.ibatis.binding.MapperMethod;
@@ -116,9 +116,10 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
         Set<Serializable> idSet = new HashSet<>(entityList.size());
         boolean result = executeBatch(entityList, batchSize, (sqlSession, entity) -> {
             // 保存数据
-            sqlSession.insert(sqlStatement, entity);
+            int affectedRows = sqlSession.insert(sqlStatement, entity);
             // 插入执行后读取数据库生成的主键
             idSet.add(TableFieldHelper.getKeyValue(entity));
+            return affectedRows;
         });
         if (result) {
             this.doSignatureByBatchIds(idSet);
@@ -152,9 +153,10 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
             }, (sqlSession, entity) -> {
                 MapperMethod.ParamMap<T> param = new MapperMethod.ParamMap<>();
                 param.put(Constants.ENTITY, entity);
-                sqlSession.update(getSqlStatement(SqlMethod.UPDATE_BY_ID), param);
+                int affectedRows = sqlSession.update(getSqlStatement(SqlMethod.UPDATE_BY_ID), param);
                 Object idVal = tableInfo.getPropertyValue(entity, keyProperty);
                 idSet.add((Serializable) idVal);
+                return affectedRows;
             });
         }
         if (result) {
@@ -185,10 +187,11 @@ public abstract class EnhanceServiceImpl<M extends EnhanceBaseMapper<T>, T> exte
             result = executeBatch(entityList, batchSize, (sqlSession, entity) -> {
                 MapperMethod.ParamMap<T> param = new MapperMethod.ParamMap<>();
                 param.put(Constants.ENTITY, entity);
-                sqlSession.update(sqlStatement, param);
+                int affectedRows = sqlSession.update(sqlStatement, param);
 
                 Object idVal = tableInfo.getPropertyValue(entity, keyProperty);
                 idSet.add((Serializable) idVal);
+                return affectedRows;
             });
         }
         if (result) {
