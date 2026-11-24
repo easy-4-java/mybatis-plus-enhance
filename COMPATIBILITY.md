@@ -31,7 +31,7 @@
 | Spring Framework | 6.2.11 | 明确支持 JDK 21，并保持稳定的 Jakarta 技术栈 |
 | MyBatis | 3.5.19 | 当前增强实现的稳定基础版本 |
 | MyBatis-Plus | 3.5.14 | 当前增强实现的验证基线 |
-| JSqlParser | 5.2 | 与 MyBatis-Plus 标准 JSqlParser 适配包配套 |
+| JSqlParser | 5.3 | 与 MyBatis-Plus 标准 JSqlParser 适配包配套 |
 | Annotation API | `jakarta.annotation-api` 2.1.1 | 与 Spring 6 的 Jakarta 技术栈一致 |
 
 `3.0.x` 不得降级到 Spring 5、`javax.annotation` 或 JSqlParser 4.9；新增实现可以使用
@@ -44,6 +44,22 @@ JDK 21 语言特性和标准库 API，但应保持公共 API 语义与其他版�
 - 使用 JDK 21 语言特性、标准库 API 或以 JDK 21 为最低运行环境的依赖进入 `3.0.x`；
 - 跨版本线升级允许破坏二进制兼容，但必须在发布说明中列出包名、配置和依赖迁移项；
 - 同一功能应优先保持公共 API 语义一致，使用不同版本线内部实现适配 Java 和三方组件差异。
+
+## 对象 HMAC 的跨版本兼容契约
+
+`DefaultEncryptedFieldHandler` 的 `MPEH1` 签名生成统一关闭 Jackson 的
+`SORT_PROPERTIES_ALPHABETICALLY`，延续 1.0.x/2.0.x 默认 POJO 属性发现顺序。
+在实体类型、密钥及其余序列化配置一致时，三条版本线生成相同的对象签名。
+显式注解、命名策略、Map 顺序和自定义序列化器仍由调用方配置决定，不承诺不同配置之间签名相同。
+
+验签同时接受关闭和开启字母排序时生成的签名，包括旧 Jackson 3 默认排序产生的历史签名，
+并继续按签名中的 keyId 查找历史密钥。该兼容范围也覆盖嵌套 POJO；篡改后的对象必须验签失败。
+签名处理使用调用方 ObjectMapper 配置的独立副本，不修改调用方实例，也不改变字段加解密序列化。
+字符串签名（内置整行签名使用的输入）、`MPE1` 密文格式和 `MPEH1` 签名格式保持不变。
+
+升级需先让读端具备兼容验签能力；未升级的 Jackson 3 读端仍可能拒绝新生成的非字母排序对象签名。
+`HmacBranchCompatibilityTest` 使用修复前真实生成的两组固定签名验证生成、历史验签、嵌套对象、
+篡改拒绝、密钥轮换、调用方配置隔离以及新旧构造器的一致行为。
 
 ## 发布前验证
 
