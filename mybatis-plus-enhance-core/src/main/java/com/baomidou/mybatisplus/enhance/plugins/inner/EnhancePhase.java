@@ -27,6 +27,9 @@ public enum EnhancePhase {
     /** Query-result internationalization. */
     RESULT_I18N(500),
 
+    /** Application processing of results after decryption and internationalization. */
+    RESULT_PROCESSING(600),
+
     /** SQL execution observation and sidecar notifications. */
     OBSERVATION(900),
 

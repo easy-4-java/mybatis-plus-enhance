@@ -11,3 +11,9 @@
 
 该模块依赖 `mybatis-plus-enhance-core`，但不依赖 Spring。需要增强 Service、事务或依赖注入时，
 再单独引入 `mybatis-plus-enhance-spring`。
+
+## Shared permission and query callbacks
+
+`SqlDataScopeHandler` adapts a trusted SQL-condition provider to the official MyBatis-Plus `MultiDataPermissionHandler`. OR conditions are grouped before composition, and parse failures stop execution. Install `DataPermissionInterceptor` before pagination.
+
+Core `QueryResultCallbackInterceptor` runs a supplied callback once after a successful query, either through the enhancement chain or as a standalone MyBatis plugin. Consumers provide their domain-specific filling logic; the component owns callback dispatch. Use one path per SqlSessionFactory.
