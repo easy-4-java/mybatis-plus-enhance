@@ -20,7 +20,8 @@ class EnhancePhaseTest {
         assertThat(EnhancePhase.PARAMETER_ENCRYPTION.getOrder()).isLessThan(EnhancePhase.DATA_SIGNATURE.getOrder());
         assertThat(EnhancePhase.DATA_SIGNATURE.getOrder()).isLessThan(EnhancePhase.RESULT_DECRYPTION.getOrder());
         assertThat(EnhancePhase.RESULT_DECRYPTION.getOrder()).isLessThan(EnhancePhase.RESULT_I18N.getOrder());
-        assertThat(EnhancePhase.RESULT_I18N.getOrder()).isLessThan(EnhancePhase.OBSERVATION.getOrder());
+        assertThat(EnhancePhase.RESULT_I18N.getOrder()).isLessThan(EnhancePhase.RESULT_PROCESSING.getOrder());
+        assertThat(EnhancePhase.RESULT_PROCESSING.getOrder()).isLessThan(EnhancePhase.OBSERVATION.getOrder());
     }
 
     @Test
@@ -66,9 +67,9 @@ class EnhancePhaseTest {
     }
 
     @Test
-    @DisplayName("should have exactly seven enum constants")
-    void shouldHaveSevenConstants() {
-        assertThat(EnhancePhase.values()).hasSize(7);
+    @DisplayName("should have exactly eight enum constants")
+    void shouldHaveEightConstants() {
+        assertThat(EnhancePhase.values()).hasSize(8);
     }
 
     @Test

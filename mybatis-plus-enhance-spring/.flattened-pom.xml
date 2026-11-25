@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.github.easy4j</groupId>
         <artifactId>mybatis-plus-enhance</artifactId>
-        <version>3.0.x.20260630-SNAPSHOT</version>
+        <version>1.0.x.20260630-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <properties>
@@ -31,12 +31,12 @@
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-core</artifactId>
         </dependency>
-        <!-- MyBatis-Plus Extension：IService、ServiceImpl 和 SqlHelper。 -->
+        <!-- MyBatis-Plus Extension：SqlHelper 等扩展工具。 -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-extension</artifactId>
         </dependency>
-        <!-- MyBatis-Plus Spring：3.5.14 中 Service 实现依赖的 Spring 桥接模块。 -->
+        <!-- MyBatis-Plus Spring：提供 spring.service 包下的 IService 和 ServiceImpl。 -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring</artifactId>
@@ -82,10 +82,10 @@
             <artifactId>spring-web</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Jakarta Annotation：JDK 21 / Spring 6 测试示例使用资源注入注解。 -->
+        <!-- Javax Annotation：JDK 8 / Spring 5.3 测试示例使用资源注入注解。 -->
         <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
