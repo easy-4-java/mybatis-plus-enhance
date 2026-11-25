@@ -70,6 +70,7 @@ public class TenantContext {
     /**
      * Switches the tenant for the current thread and returns a scope that restores
      * the previous tenant on close.
+     * <p>作用域必须在创建线程关闭；异步任务应在任务线程内创建自己的作用域。</p>
      *
      * @param tenantId the tenant ID for this scope
      * @return an auto-restoring tenant scope handle
@@ -83,10 +84,13 @@ public class TenantContext {
     /**
      * Auto-restoring scope handle for tenant context.
      *
-     * <p>Closing the scope restores the tenant that was active before opening.
-     * Repeated close calls are safe.</p>
+     * <p>只能由创建线程关闭并恢复原租户；同线程重复关闭保持幂等。
+     * 跨线程关闭始终抛出异常，不改变租户上下文或关闭状态。</p>
      */
     public static final class Scope implements AutoCloseable {
+
+        /** 创建此作用域的线程，使用对象身份校验归属。 */
+        private final Thread ownerThread;
 
         /**
          * The context instance responsible for restoring tenant state.
@@ -110,15 +114,22 @@ public class TenantContext {
          * @param previousTenantId the tenant identifier before this scope was opened
          */
         private Scope(TenantContext context, Object previousTenantId) {
+            this.ownerThread = Thread.currentThread();
             this.context = context;
             this.previousTenantId = previousTenantId;
         }
 
         /**
-         * Closes this scope and restores the previous tenant.
+         * 在创建线程关闭作用域并恢复原租户；同线程重复关闭不改变上下文。
+         *
+         * @throws IllegalStateException 由其他线程关闭，包括已经关闭的作用域
          */
         @Override
         public void close() {
+            // 在读取关闭状态或恢复租户前拒绝其他线程，防止污染调用线程的上下文。
+            if (Thread.currentThread() != ownerThread) {
+                throw new IllegalStateException("Tenant scope must be closed by its creating thread");
+            }
             if (closed) {
                 return;
             }

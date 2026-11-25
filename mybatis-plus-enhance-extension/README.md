@@ -11,3 +11,7 @@
 
 该模块依赖 `mybatis-plus-enhance-core`，但不依赖 Spring。需要增强 Service、事务或依赖注入时，
 再单独引入 `mybatis-plus-enhance-spring`。
+
+`TenantContext.open(tenantId)` 返回的作用域只能在创建线程关闭。同线程重复关闭保持幂等；
+其他线程关闭（包括已关闭的作用域）会抛出 `IllegalStateException`，不会改变任一线程的租户或作用域状态。
+异步任务应在任务线程内创建并关闭自己的作用域；上下文透传仍需 TTL 包装的执行器。

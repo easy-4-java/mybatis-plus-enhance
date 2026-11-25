@@ -36,6 +36,8 @@ Modular enhancement framework for MyBatis-Plus: transparent encryption, table-le
 - Table-level data signature, verification and historical back-filling;
 - Tenant context and a default adapter for the official `TenantLineInnerInterceptor`;
 - Annotation-based data-scope metadata with expression extension points for the official `DataPermissionInterceptor`;
+- `SqlDataScopeHandler` adapts legacy statement-based SQL predicates to the official permission interceptor.
+- `QueryResultCallbackInterceptor` delivers normalized Mapper arguments and results after decryption and i18n. Register it either inside the enhance chain or as a standalone MyBatis plugin.
 - Entity field internationalization (i18n) mapping;
 - MySQL `INSERT IGNORE` scope;
 - Long-SQL detection, real execution-time observation and slow-SQL logging;
