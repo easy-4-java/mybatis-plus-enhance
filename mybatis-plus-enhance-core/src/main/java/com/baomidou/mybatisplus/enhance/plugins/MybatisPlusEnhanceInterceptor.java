@@ -117,7 +117,7 @@ public class MybatisPlusEnhanceInterceptor extends MybatisPlusInterceptor {
         Object target = invocation.getTarget();
         Object[] args = invocation.getArgs();
         if (target instanceof Executor) {
-            final Executor executor = (Executor) target;
+            Executor executor = (Executor) target;
             Object parameter = args[1];
             boolean isUpdate = args.length == 2;
             MappedStatement ms = (MappedStatement) args[0];
